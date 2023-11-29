@@ -1,0 +1,38 @@
+
+# as backend for the kick file backuped by xarray
+# to be removed as soon as the kick approximation
+# is calculated on the fly
+numpy
+scipy
+xarray
+h5netcdf
+pymongo
+jsons
+numpy
+poetry
+matplotlib
+bluesky<1.11
+databroker
+cycler
+
+numpy
+pandas
+pymongo
+poetry
+ophyd>=1.6
+jsons
+
+# np
+scipy
+pandas
+xarray
+
+numpy
+scipy
+
+pandas
+protobuf >=3.18.3, ==3.*
+python-dateutil
+setuptools>=61.0.0
+# only once for building cysetuptools
+# cython-setuptools
