@@ -13,7 +13,7 @@ From: ubuntu:22.04
 
 %post
     # number of build jobs: preset for for a moderate machine
-    N_JOBS=48
+    # N_JOBS=48
 
     export DEBIAN_FRONTEND=noninteractive
     apt-get update

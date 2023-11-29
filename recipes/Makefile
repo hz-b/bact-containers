@@ -4,7 +4,13 @@ T_DIR=$(T_DIR_ABS)
 #T_DIR=/home/schnizer/Devel/github/thor-scsi-lib-container
 BUILD_DIR=$(T_DIR)/build/
 SRC_DIR=$(T_DIR)/external-repositories/
-APPTAINER=apptainer
+
+
+NPROC=nproc
+# one job per processor
+N_JOBS=$(shell nproc)
+
+APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP3=pip3
 WHEELS_DIR=$(T_DIR)/wheels
