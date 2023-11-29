@@ -1,0 +1,3 @@
+[submodule "external-repositories/bact-archiver"]
+	path = external-repositories/bact-archiver
+	url = https://github.com/hz-b/bact-archiver.git

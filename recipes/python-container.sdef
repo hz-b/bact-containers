@@ -1,0 +1,35 @@
+#
+# Author:
+#         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+# Container containing python basis
+
+Bootstrap: docker
+From: ubuntu:22.04
+# From: debian:stable
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+       python3-minimal \
+       python3-pip \
+       python3-venv \
+       git \
+       bash \
+       less
+
+#       python3-numpy \
+#       python3-scipy \
+#       python3-matplotlib \
+#       python3-pandas \
+
+   # remove downloaded packages
+   apt-get clean
+   ## remove the whole cache
+   ## rm -r /var/cache
+
+%runscript
+    exec python3 "$@"

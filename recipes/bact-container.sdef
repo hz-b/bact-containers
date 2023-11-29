@@ -1,0 +1,82 @@
+#
+# Author:
+#         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+# Container containing python basis
+
+
+Bootstrap: localimage
+From: ../build/python-container.sif
+
+
+# copy local built wheels into the images
+%files
+    ../wheels/*.whl /build/wheels/
+    snippets/bact_packages.sh /build/snippets/
+
+%post
+    export TOP_DIR=`pwd`
+    mkdir -p build
+    cd build
+    export BUILD_DIR=`pwd`
+
+    # python3 -m venv venv
+    # . venv/bin/activate
+
+    ls /build/snippets
+    echo $SHELL
+
+    apt-get install -y --no-install-recommends \
+	libprotobuf23
+
+    # setup pip
+    pip3 install --upgrade pip wheel
+
+    # Inspect cache: report later what is used
+    # could be copied in on install
+    echo '----------------------------------------------------------------------'
+    echo pip3 cache
+    pip3 cache list
+    echo '----------------------------------------------------------------------'
+    pip3 install bact-archiver --find-links file:///build/wheels
+
+    /bin/bash /build/snippets/bact_packages.sh
+
+
+    git clone https://github.com/hz-b/bact-archiver-bessyii.git
+    cd bact-archiver-bessyii
+    if [ -e requirements.txt ] ; then
+          pip3 install -r requirements.txt
+    fi
+    python3 setup.py install
+    cd ..
+
+    # something to get rid off
+    # echo 'building bact2 --------------------------------------'
+    # git clone https://github.com/hz-b/bact2.git
+
+    # cd bact2
+    # pip3 install -e .
+    # cd ..
+
+    # to be moved to requirements ---------------------------------------
+    # scipy: bact-math-utils
+    # h5netcdf: bact-analysis-bessyii
+    # fastapi, uvicorn: bessyii-dashboard
+    pip3 install h5netcdf scipy fastapi uvicorn
+
+    # cleaning up  ------------------------------------------------------
+    cd $TOP_DIR
+    echo '----------------------------------------------------------------------'
+    echo 'pip3 cache (after installing)'
+    pip3 cache list
+    echo '----------------------------------------------------------------------'
+    pip3 cache purge
+    # don't remove build directory yet ... partly local installs
+    # rm -r build
+    rm -r build/wheels
+    apt-get clean
+
+%runscript
+    exec python3 "$@"

@@ -1,0 +1,159 @@
+#
+# Author:
+#         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#         Markus Ries               <markus.ries@helmholtz-berlin.de>
+#         Teresia Olsson            <teresia.olsson@helmholtz-berlin.de>
+#
+# Container containing the core components of the digital twin
+
+Bootstrap: docker
+From: ubuntu:22.04
+
+
+%post
+    # number of build jobs: preset for for a moderate machine
+    N_JOBS=48
+
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+
+    apt-get install -y --no-install-recommends \
+       build-essential \
+       gfortran \
+       cmake \
+       make \
+       gdb \
+       git \
+       libreadline-dev \
+       flex \
+       bison \
+       libarmadillo-dev \
+       libboost-chrono-dev \
+       libboost-thread-dev \
+       libboost-filesystem-dev \
+       libboost-program-options-dev \
+       libboost-regex-dev \
+       libboost-test-dev \
+       python3-numpy-dev \
+       pybind11-dev \
+       python3-pip \
+       python3-pybind11 \
+       python3-setuptools \
+       python3-tk \
+       python3-dev \
+       libgsl-dev \
+       sqlite3 \
+       less \
+       libgsl-dev
+
+
+    # only required for docker not for singularity
+    ## # For epics usage
+    ## # EXPOSE 5064/tcp
+    ## # EXPOSE 5065/tcp
+    ## # EXPOSE 5064/udp
+    ## #EXPOSE 5065/udp
+
+    # setups ------------------------------------------------------------
+    # put here so less surprise down after a long build time
+    CMAKE_BUILD_DIR=build
+    mkdir $CMAKE_BUILD_DIR
+    cd $CMAKE_BUILD_DIR
+    CMAKE_BUILD_DIR=`pwd`
+    echo "CMAKE_BUILD_DIR: $CMAKE_BUILD_DIR"
+
+
+    # packages built here are installed to /opt
+    # thor scsi needs to find gtpsa cmake config
+    CMAKE_PREFIX_PATH=/opt/lib/cmake
+
+    # add /opt/lib so that it will be used by ldconfig
+    # do not forget to run ldconfig after everything has been
+    # installed
+    opt_conf_path=/etc/ld.so.conf.d/opt.conf
+    echo '# parts built during process go here' >  $opt_conf_path
+    echo '/opt/lib'                             >> $opt_conf_path
+    echo '#EOF'                                 >> $opt_conf_path
+
+    # let epics know where it finds the stuff ...
+    release_local=RELEASE.local
+    echo "# Release.local ... reflecting twin " >  $release_local
+    echo "HOME_DEVEL=$CMAKE_BUILD_DIR"          >> $release_local
+    echo 'EPICS_BASE=$(HOME_DEVEL)/epics-base'  >> $release_local
+    echo 'PYDEVICE=$(HOME_DEVEL)/PyDevice'      >> $release_local
+    echo '#EOF'                                 >> $release_local
+
+    echo "ld config for opt"
+    cat $opt_conf_path
+    echo "Release local"
+    cat $release_local
+
+    # end setups ---------------------------------------------------------
+
+    export DEBIAN_FRONTEND=noninteractive
+
+
+    # run ldconfig ... to check that it exists and works
+    # don't need to find out after half an hour build
+    /sbin/ldconfig
+
+
+    ## # epics-base ----------------------------------------------------------
+    echo 'building epics base ---------------------------------------------'
+    git clone https://github.com/epics-base/epics-base.git
+    cd epics-base
+    git submodule update --recursive --init
+    git submodule update
+
+    # be nice and kick up the number of processors
+    make -C . -j $N_JOBS
+    make -C . install
+
+    cd ..
+    echo 'building epics base done ----------------------------------------'
+    # end epics-base ------------------------------------------------------
+
+    # pydevice  -----------------------------------------------------------
+    echo 'building pydevice -----------------------------------------------'
+    git clone https://github.com/hz-b/PyDevice.git
+
+    find . -type f | xargs grep -n -- 'ics/'
+    cd PyDevice
+    # why do I need to make it available here ?
+    # and why does it have to be a copy and not a link ?
+    cp ../$release_local configure/
+
+    ## # enable python3
+    ln -s /usr/bin/python3-config /usr/bin/python-config
+
+
+    # be nice and kick up the number of processors
+    nice -15 make -C . -j $N_JOBS
+
+    # skip make test for now, two tests have to be fixed
+    cd ..
+    echo 'building pydevice done ------------------------------------------'
+    # end pydevice  -------------------------------------------------------
+
+    echo 'cleaning build directories --------------------------------------'
+    # epics pydevice thor scsi / gtpsa builds and installations done
+    # here do clean up
+    # but not yet .. need to see how epics is installed
+    # rm -rf /$CMAKE_BUILD_DIR
+
+    echo '### remove apt-get cache ###'
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    echo '### remove pip cache ###'
+    rm -rf /.cache
+
+    # find / -type f > /var/log/files.txt || echo 'done'
+    # chmod 666 /var/log/files.txt
+    echo 'cleaning build directories done ------------------------------------'
+
+    /sbin/ldconfig
+
+%runscript
+    exec python3 "$@"
