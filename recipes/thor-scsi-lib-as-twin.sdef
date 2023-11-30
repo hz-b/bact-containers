@@ -130,7 +130,7 @@ From: ../build/epics7-pydevice.sif
     # echo 'building dt4acc--------------------------------------------------'
     git clone https://github.com/hz-b/dt4acc.git dt4acc
     cd dt4acc
-    git checkout dev/feature/as-shadow
+    # git checkout dev/feature/as-shadow
     git config pull.rebase false
     git pull
     make -j $N_JOBS
