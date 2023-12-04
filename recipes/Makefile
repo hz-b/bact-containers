@@ -12,7 +12,7 @@ N_JOBS=$(shell nproc)
 
 APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
-PIP3=pip3
+PIP_MODULE=pip
 WHEELS_DIR=$(T_DIR)/wheels
 
 # soley build to be able to build the other containers
@@ -38,7 +38,7 @@ bact-container.sdef : $(BUILD_DIR)/python-container.sif $(BACT_ARCHIVER_WHEEL_ST
 $(BUILD_DIR)/bact-archiver-build.sif : $(UBUNTU_BUILD_IMG)
 
 
-thor-scsi-lib-as-twin.sdef : $(BUILD_DIR)/epics7-pydevice.sif
+$(BUILD_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef $(PIP_ARCHIVER_WHEEL_STAMP) $(BUILD_DIR)/epics7-pydevice.sif
 
 $(BUILD_DIR)/%.sif : %.sdef
 	$(APPTAINER) build $@ $<
@@ -51,8 +51,8 @@ clean :
 # special builds ....
 # the build image to use
 
-$(PIP_ARCHIVER_WHEEL_STAMP) : lists/bact_package_list.txt
-	$(PIP3) download -r $< -d $(WHEELS_DIR)
+$(PIP_ARCHIVER_WHEEL_STAMP) : lists/bact_package_list.txt 
+	$(BACT_ARCHIVER_BUILD_IMG) -m $(PIP_MODULE) download -r $< -d $(WHEELS_DIR) --check-build-dependencies
 	$(TOUCH) $@
 
 #------------------------------------------------------------
