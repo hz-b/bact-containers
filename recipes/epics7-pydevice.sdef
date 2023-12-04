@@ -109,7 +109,8 @@ From: ubuntu:22.04
     # be nice and kick up the number of processors
     make -C . -j $N_JOBS
     make -C . install
-
+    # test if epics is then still ok...
+    make -C . clean
     cd ..
     echo 'building epics base done ----------------------------------------'
     # end epics-base ------------------------------------------------------
