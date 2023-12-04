@@ -14,6 +14,8 @@ From: ../build/epics7-pydevice.sif
 
 %files
     snippets/bact_packages.sh /build/snippets/
+    # guessing where wheels will be searched for
+    ../wheels/* /build/wheels/
 
 %post
     # number of build jobs: preset for for a moderate machine
@@ -23,7 +25,9 @@ From: ../build/epics7-pydevice.sif
 
     # so that secrets only need to be inserted once
     git config  --global credential.helper cache --timeout=36000
- 
+    pip cache dir
+    # ls `pip cache dir`
+
     # setups ------------------------------------------------------------
     # put here so less surprise down after a long build time
     CMAKE_BUILD_DIR=build
@@ -64,7 +68,7 @@ From: ../build/epics7-pydevice.sif
     # run ldconfig ... to check that it exists and works
     # don't need to find out after half an hour build
     /sbin/ldconfig
-    
+
     # update pip
     pip3 install --upgrade pip wheel
 
@@ -72,7 +76,7 @@ From: ../build/epics7-pydevice.sif
     # installed before building packages: some packages are local and
     # need the token
     /bin/bash /build/snippets/bact_packages.sh
-    
+
     # gtpsa-cpp -----------------------------------------------------------
     echo 'building gtpsa --------------------------------------------------'
     git clone https://github.com/hz-b/gtpsa-cpp.git
@@ -97,7 +101,7 @@ From: ../build/epics7-pydevice.sif
     ls $CMAKE_PREFIX_PATH
     # build thor scsi need to inform where c++ librarires are installed
     export gtpsa_DIR=/twin/lib/cmake
-    
+
 
     # thor-scsi-lib -------------------------------------------------------
     echo 'building thor scsi lib ------------------------------------------'
@@ -156,21 +160,26 @@ From: ../build/epics7-pydevice.sif
     echo 'end debug info --------------------------------------------------'
     echo 'building and install python packages ----------------------------'
 
-    pip3 install -v -r ./gtpsa-cpp/python/requirements.txt
+    pip3 install -v -r ./gtpsa-cpp/python/requirements.txt  --find-links file:///build/wheels --no-index
     pip3 install -v ./gtpsa-cpp/python
-    pip3 install -v -r ./thor-scsi-lib/python/requirements.txt
+    pip3 install -v -r ./thor-scsi-lib/python/requirements.txt  --find-links file:///build/wheels --no-index
     pip3 install -v ./thor-scsi-lib/python
 
 
-    echo '### remove apt-get cache ###'
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
-    echo '### clearing pip cache ###'
-    pip3 cache purge
+    echo "---- pip list --- "
+    pip3 list
+    echo "---- pip list --- "
+    echo "---- pip cache --- "
+    pip3 cache list
+    echo "---- pip cache --- "
 
-    echo '### remove pip cache ###'
+    echo 'remove pip cache '
+    pip3 cache purge
     rm -rf /.cache
+    rm -rf /build/wheels
 
     # find / -type f > /var/log/files.txt || echo 'done'
     # chmod 666 /var/log/files.txt

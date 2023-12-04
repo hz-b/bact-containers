@@ -27,7 +27,10 @@ CONTAINERS=$(BUILD_DIR)/python-container.sif       \
 BACT_ARCHIVER_WHEEL_STAMP=bact-archiver-whl.stamp
 PIP_ARCHIVER_WHEEL_STAMP=pip-archiver-whl.stamp
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) $(PIP_ARCHIVER_WHEEL_STAMP)
+
 all : $(CONTAINERS)
+
+wheels: $(PIP_ARCHIVER_WHEEL_STAMP)
 
 
 bact-container.sdef : $(BUILD_DIR)/python-container.sif $(BACT_ARCHIVER_WHEEL_STAMP) $(PIP_ARCHIVER_WHEEL_STAMP)
