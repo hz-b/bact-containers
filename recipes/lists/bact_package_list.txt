@@ -1,60 +1,33 @@
+numpy                    
+scipy
+pandas                    
+
+pymongo
+jsons
+
+ophyd>=1.6
+# why that?
+bluesky<1.11
+databroker
+
+matplotlib
+tqdm
+
+fastapi
+uvicorn
+starlette
 
 # as backend for the kick file backuped by xarray
 # to be removed as soon as the kick approximation
 # is calculated on the fly
-numpy
-scipy
-xarray
+xarray>=2023.11.0
+# for exporting 
 h5netcdf
-pymongo
-jsons
-numpy
+
+# required for building
+wheel
+setuptools
+setuptools-scm
+
 poetry
-matplotlib
-bluesky<1.11
-databroker
-cycler
-
-numpy
-pandas
-pymongo
-poetry
-ophyd>=1.6
-jsons
-
-# np
-scipy
-pandas
-xarray
-
-numpy
-scipy
-
-pandas
-protobuf >=3.18.3, ==3.*
-python-dateutil
-setuptools>=61.0.0
-# only once for building cysetuptools
-# cython-setuptools
-
-PIMS>=0.6.1
-NAFFlib>=1.0.2
-Pint>=0.19.1
-analysis>=-0.1.7
-asciitree>=0.3.3
-cython_setuptools>=0.2.3
-jupyterlab_black>=0.2.1
-np>=1.0.2
-pandas>=1.5.3
-
-pyat
-pyepics>=3.5.1
-typing>=3.7.4.3
-uuid>=1.30
-
-jsons
-typish
-pydantic>=2.5.2
-uvicorn
-starlette
-networkx
+poetry-core>=1.0.0
