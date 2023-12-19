@@ -1,6 +1,9 @@
 # emacs files
 *~
 
+# make file helper stamps
+*.stamp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
