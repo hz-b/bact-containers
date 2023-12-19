@@ -15,7 +15,8 @@ From: ../build/epics7-pydevice.sif
 %files
     snippets/bact_packages.sh /build/snippets/
     # guessing where wheels will be searched for
-    ../wheels/* /build/wheels/
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
 
 %post
     # number of build jobs: preset for for a moderate machine

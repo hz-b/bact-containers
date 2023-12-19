@@ -45,6 +45,7 @@ From: ubuntu:22.04
        libgsl-dev \
        sqlite3 \
        less \
+       bash \
        libgsl-dev
 
 
@@ -157,4 +158,4 @@ From: ubuntu:22.04
     /sbin/ldconfig
 
 %runscript
-    exec python3 "$@"
+    exec /bin/bash "$@"

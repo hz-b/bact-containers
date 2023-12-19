@@ -1,16 +1,29 @@
 Bootstrap: localimage
 From: ../build/ubuntu-build.sif
 
+%files
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
+
 %post
     export TOP_DIR=`pwd`
-    mkdir build
     cd build
     export BUILD_DIR=`pwd`
 
     # setup pip
     pip3 install --upgrade pip wheel
-    pip3 install numpy pandas setuptools python-dateutil
+    pip3 install numpy pandas setuptools python-dateutil pybind11 --find-links file:///build/wheels  --no-index
 
-    
+    echo '----------------------------------------------------------------------'
+    echo 'pip3 cache (after installing)'
+    pip3 cache list
+    echo '----------------------------------------------------------------------'
+    pip3 cache purge
+    # don't remove build directory yet ... partly local installs
+    rm -r /build/wheels
+    apt-get clean
+
+    rm -rf /.cache
+
 %runscript
     exec python3 "$@"

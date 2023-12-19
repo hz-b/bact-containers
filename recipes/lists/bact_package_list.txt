@@ -1,16 +1,26 @@
-numpy                    
+numpy
 scipy
-pandas                    
+pandas
 
 pymongo
 jsons
 
 ophyd>=1.6
+# acces to the database
+pyepics
 # why that?
 bluesky<1.11
 databroker
+PIMS
 
+# for bact archiver
+protobuf==3.*,>=3.18.3
+pybind11
+
+# for bluesky: requirements
 matplotlib
+PyQt5
+PySide2
 tqdm
 
 fastapi
@@ -21,7 +31,8 @@ starlette
 # to be removed as soon as the kick approximation
 # is calculated on the fly
 xarray>=2023.11.0
-# for exporting 
+# for exporting
+h5py
 h5netcdf
 
 # required for building

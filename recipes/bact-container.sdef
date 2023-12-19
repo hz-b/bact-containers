@@ -13,6 +13,7 @@ From: ../build/python-container.sif
 # copy local built wheels into the images
 %files
     ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
     snippets/bact_packages.sh /build/snippets/
 
 %post
@@ -39,15 +40,16 @@ From: ../build/python-container.sif
     echo pip3 cache
     pip3 cache list
     echo '----------------------------------------------------------------------'
-    pip3 install bact-archiver --find-links file:///build/wheels
+    pip3 install bact-archiver --find-links file:///build/wheels --no-index
 
     /bin/bash /build/snippets/bact_packages.sh
 
+    pip3 install pyepics --find-links file:///build/wheels  --no-index
 
     git clone https://github.com/hz-b/bact-archiver-bessyii.git
     cd bact-archiver-bessyii
     if [ -e requirements.txt ] ; then
-          pip3 install -r requirements.txt
+          pip3 install -r requirements.txt  --find-links file:///build/wheels  --no-index
     fi
     python3 setup.py install
     cd ..
@@ -64,7 +66,7 @@ From: ../build/python-container.sif
     # scipy: bact-math-utils
     # h5netcdf: bact-analysis-bessyii
     # fastapi, uvicorn: bessyii-dashboard
-    pip3 install h5netcdf scipy fastapi uvicorn
+    pip3 install h5netcdf scipy fastapi uvicorn  --find-links file:///build/wheels  --no-index
 
     # cleaning up  ------------------------------------------------------
     cd $TOP_DIR
