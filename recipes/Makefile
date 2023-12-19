@@ -29,10 +29,6 @@ CONTAINERS=$(BUILD_DIR)/python-container.sif       \
 BACT_ARCHIVER_WHEEL_STAMP=bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=pip-whl.stamp
 BACT2_BESSYII_WHEEL_STAMP=bact-bessyii-whl.stamp
-GTPSA_BUILD_STAMP=gtpsa-build.stamp
-GTPSA_WHEEL_STAMP=gtpsa-whl.stamp
-THOR_SCSI_BUILD_STAMP=thor-scsi-build.stamp
-THOR_SCSI_WHEEL_STAMP=thor-scsi-whl.stamp
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
        $(BACT2_BESSYII_WHEEL_STAMP) \
@@ -128,7 +124,7 @@ $(GTPSA_WHEEL_STAMP) : $(GTPSA_BUILD_STAMP) $(EPICS7_IMG)
 	) && $(TOUCH) $@
 
 thor_scsi_DIR=$(SRC_DIR)/thor-scsi-lib/
-$(THOR_SCSI_BUILD_STAMP) : $(EPICS7_IMG)
+$(THOR_SCSI_BUILD_STAMP) : $(EPICS7_IMG) $(GTPSA_BUILD_STAMP)
 	(                                                                      \
           cd $(thor_scsi_DIR)                                                  \
           && $(EPICS7_IMG) -c "mkdir -p build"                                 \
@@ -137,8 +133,8 @@ $(THOR_SCSI_BUILD_STAMP) : $(EPICS7_IMG)
           && $(EPICS7_IMG) -c "$(CMAKE) --install build --prefix $(LOCAL_DIR)" \
         ) && $(TOUCH) $@
 
-$(THOR_SCSI_WHEEL_STAMP) : $(THOR_SCSI_BUILD_STAMP) $(EPICS7_IMG)
-	(                                                                      \
-          cd $(gtpsa_DIR)/python                                               \
+$(THOR_SCSI_WHEEL_STAMP) : $(THOR_SCSI_BUILD_STAMP) $(EPICS7_IMG) $(GTPSA_WHEEL_STAMP)
+	(                                                                          \
+          cd $(thor_scsi_DIR)/python                                               \
 	  && gtpsa_PREFIX=$(LOCAL_DIR) thor_scsi_PREFIX=$(LOCAL_DIR) $(EPICS7_IMG) -c "python3 setup.py bdist_wheel -d $(WHEELS_DIR)" \
 	) && $(TOUCH) $@
