@@ -7,7 +7,7 @@
 
 
 Bootstrap: localimage
-From: ../build/python-container.sif
+From: ../bin/python-container.sif
 
 
 # copy local built wheels into the images

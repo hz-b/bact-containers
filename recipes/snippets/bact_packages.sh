@@ -33,7 +33,6 @@ do
     echo "Building $i"
     git clone https://github.com/hz-b/$i.git
     cd $i
-    git checkout dev/feature/argparse
     git pull
     if [ -f requirements.txt ] ; then
 	# if not available in the directory

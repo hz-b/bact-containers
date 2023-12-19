@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: ../build/ubuntu-build.sif
+From: ../bin/ubuntu-build.sif
 
 %files
     ../wheels/*.whl /build/wheels/

@@ -10,13 +10,16 @@
 # From: ubuntu:22.04
 
 Bootstrap: localimage
-From: ../build/epics7-pydevice.sif
+From: ../bin/epics7-pydevice.sif
 
 %files
     snippets/bact_packages.sh /build/snippets/
     # guessing where wheels will be searched for
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
+    ../external-repositories/dt4acc /build/
+    # locally perbuilts: gtpsa-cpp and thor-scsi
+    ../local/* /twin/
 
 %post
     # number of build jobs: preset for for a moderate machine
@@ -58,7 +61,7 @@ From: ../build/epics7-pydevice.sif
     echo '# parts built during process go here' >  $opt_conf_path
     echo '/twin/lib'                            >> $opt_conf_path
     echo '#EOF'                                 >> $opt_conf_path
-    
+
     echo "ld config for opt"
     cat $opt_conf_path
     echo "Release local"
@@ -75,90 +78,19 @@ From: ../build/epics7-pydevice.sif
     # installing bact packages
     /bin/bash /build/snippets/bact_packages.sh
 
-    # gtpsa-cpp -----------------------------------------------------------
-    echo 'building gtpsa --------------------------------------------------'
-    git clone https://github.com/hz-b/gtpsa-cpp.git
-    cd gtpsa-cpp
-    # get mad-ng ... but only this submodule
-    git submodule init
-    git submodule update
-
-    # get ready to build here
-    mkdir build
-    cmake -B build .
-    # be nice and kick up the number of processors
-    nice -15 make -C build -j $N_JOBS
-
-    # skip make test for now, two tests have to be fixed
-    cmake --install build --prefix /twin/
-    # clean up builds
-    make -C build clean
-    cd ..
-    echo 'building gtpsa done ---------------------------------------------'
-    # end gtpsa-cpp -------------------------------------------------------
-
-    echo "CMAKE PREFIX PATH $CMAKE_PREFIX_PATH"
-    ls $CMAKE_PREFIX_PATH
-    # build thor scsi need to inform where c++ librarires are installed
-    export gtpsa_DIR=/twin/lib/cmake
-
-
-    # thor-scsi-lib -------------------------------------------------------
-    echo 'building thor scsi lib ------------------------------------------'
-    git clone https://github.com/hz-b/thor-scsi-lib.git
-    cd thor-scsi-lib
-    # only check out flame .. no subrepos of flame are needed
-    git submodule init
-    git submodule update
-
-    # better a separate build directory
-    mkdir build
-
-    cmake -B build .
-    nice -15 make -C build -j $N_JOBS
-    # skip make test for now, two tests have to be fixed
-    cmake --install build --prefix /twin/
-    # clean up builds
-    # back where we were
-    cd ..
-    echo 'building thor scsi lib done -------------------------------------'
-    # end thor-scsi-lib ---------------------------------------------------
+    # gtpsa-cpp and thor scsi ---------------------------------------------
+    # c++ part copied from local
+    pip3 install gtpsa thor_scsi --find-links file:///build/wheels --no-index
 
     # dt4acc --------------------------------------------------------------
     # echo 'building dt4acc--------------------------------------------------'
-    git clone https://github.com/hz-b/dt4acc.git dt4acc
     cd dt4acc
-    # git checkout dev/feature/as-shadow
-    git config pull.rebase false
-    git pull
     make -j $N_JOBS
     make -j $N_JOBS install
-    cd ..
+    cd ../
     echo 'building and install python packages done -----------------------'
     # echo 'end building dt4acc----------------------------------------------'
     # end dt4acc ----------------------------------------------------------
-
-    echo 'debug info ------------------------------------------------------'
-    pwd
-    find . -type d
-    echo 'end debug info --------------------------------------------------'
-
-    # echo 'debug info ------------------------------------------------------'
-    # pwd
-    # find . -type d
-    # echo 'end debug info --------------------------------------------------'
-    echo 'building and install python packages ----------------------------'
-
-    # install gtpsa and thor scsi python module
-    #    need to inform where c++ librarires are installed
-    export gtpsa_PREFIX=/twin
-    export thor_scsi_PREFIX=/twin
-
-    pip3 install -r ./gtpsa-cpp/python/requirements.txt  # --find-links file:///build/wheels --no-index
-    pip3 install ./gtpsa-cpp/python
-    pip3 install -r ./thor-scsi-lib/python/requirements.txt  # --find-links file:///build/wheels --no-index
-    pip3 install ./thor-scsi-lib/python
-
 
     echo 'cleaning build directories --------------------------------------'
     # epics pydevice thor scsi / gtpsa builds and installations done
@@ -183,7 +115,7 @@ From: ../build/epics7-pydevice.sif
     rm -rf /build/wheels
     rm -rf /build/thor-scsi
     rm -rf /build/gtpsa-cpp
-    
+
     # find / -type f > /var/log/files.txt || echo 'done'
     # chmod 666 /var/log/files.txt
     echo 'cleaning build directories done ------------------------------------'

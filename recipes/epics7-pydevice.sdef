@@ -16,9 +16,9 @@ From: ubuntu:22.04
     # N_JOBS=48
 
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update
+    apt-get -q=2 update
 
-    apt-get install -y --no-install-recommends \
+    apt-get -q=2 install -y --no-install-recommends \
        build-essential \
        gfortran \
        cmake \

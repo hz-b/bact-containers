@@ -12,8 +12,8 @@ From: ubuntu:22.04
 %post
     export DEBIAN_FRONTEND=noninteractive
 
-    apt-get update
-    apt-get install -y --no-install-recommends \
+    apt-get update -q=2
+    apt-get install -y --no-install-recommends -q=2 \
        python3-minimal \
        python3-pip \
        python3-venv \

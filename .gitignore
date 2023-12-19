@@ -2,7 +2,15 @@
 *~
 
 # make file helper stamps
-*.stamp
+build/*.stamp
+
+# built containterns 
+bin/*.sif
+
+# files built here ready to install in containers
+local/bin
+local/include
+local/lib
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
