@@ -97,12 +97,12 @@ Now let's use the second shell so that we can see what is happening while the tw
 
 .. code:: shell
 
-   /build/epics-base/bin/linux-x86_64/camonitor             \
-	  Pierre:DT:PMUXZR:name                             \
-          Pierre:DT:QSPAZR:set                              \
-          Pierre:DT:Q1M1D1R:Cm:set Pierre:DT:Q1M1D1R:Cm:set \
-          Pierre:DT:Q1M1D1R:im:Imux                         \
-          Pierre:DT:Q1M1D1R:im:I                            \
+   /build/epics-base/bin/linux-x86_64/camonitor              \
+          Pierre:DT:PMUXZR:name                              \
+          Pierre:DT:QSPAZR:set                               \
+          Pierre:DT:Q1M1D1R:Cm:set Pierre:DT:Q1M1D1R:Cm:rdbk \
+          Pierre:DT:Q1M1D1R:im:Imux                          \
+          Pierre:DT:Q1M1D1R:im:I                             \
           Pierre:DT:Q1M1D1R:im:mux:active
 
 

@@ -75,6 +75,33 @@ machine  is given by
 * `Pierre:DT:TUNEZR:rdH`
 * `Pierre:DT:TUNEZR:rdV`
 
+Magnet strength
+---------------
+
+The strength of each magnet can be inspected. It is illustrated for
+the magnet `Q1M1D1R` below
+
+* `Pierre:DT:Q1M1D1R:Cm:set` value the twin is set to
+* `Pierre:DT:Q1M1D1R:Cm:rdbk` the value that the calculation engine uses.
+
+These both values should be the same except when a value change is executed.
+
+The following values below are not considered as part of the API, but can
+be useful for inpection
+
+* `Pierre:DT:Q1M1D1R:im:I` is the equivalent current: typically this is
+  the same current as the current the power converter the magnet is
+  hooked up to.
+* `Pierre:DT:Q1M1D1R:im:dItest` allows to apply a current correction
+  to this magnet. This value is set to 0 by default.
+
+* `Pierre:DT:Q1M1D1R:im:Imux` reflects the *equivalent* current the
+   muxer applies to the magnet: i.e. it is the current the muxer
+   would need to apply if it is directly feeding its current to
+   the main coil windings of this particular magnet.
+
+
+
 
 Moving magnets in the twin
 --------------------------
