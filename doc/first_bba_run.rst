@@ -29,11 +29,17 @@ A more realistic example
 Setup
 ~~~~~
 
+
+
+
 Its recommended to open three separate terminals.
 
 1. One terminal is used to run the model / twin as an epics input output controller (IOC)
 2. A second terminal is used to monitor some of the model variables
 3. A third terminal is used to execute the measurement script
+
+
+Please change first into the `bin` directory in all these three terminals.
 
 
 For starting twin see `start_twin.rst`_
@@ -61,19 +67,20 @@ For that let's run the command
 
    /build/epics-base/bin/linux-x86_64/caput  Pierre:DT:Q1M1D1R:x:set 3e-4
 
+
 You can see the reaction of the twin in the first terminal where the twin was started. You could
 now inspect different properties of the "beam": e.g.
 
 .. code:: shell
 
-   build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:orbit:x
+   /build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:orbit:x
 
 
 The position names of the model are found in the vector
 
 .. code:: shell
 
-   build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:names
+   /build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:names
 
 
 The Twiss paratmeters are given in the variables
