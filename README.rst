@@ -8,17 +8,18 @@ Cloning the repository and required external repositories
 
 * please clone the repository e.g.
 
-```shell
+.. code:: shell
 
-git clone https://github.com/hz-b/bact-containers.git
-```
+    git clone https://github.com/hz-b/bact-containers.git
+
 
 Please install the external respositories this one depends on.
 
-```shell
+.. code:: shell
 
-git submodule update --init --recursive
-```
+   git submodule update --init --recursive
+
+
 This will checkout private repositories next to repositories
 which require large downloads.
 
