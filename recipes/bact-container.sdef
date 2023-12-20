@@ -3,9 +3,14 @@
 #         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
 #         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
 #
-# Container containing python basis
-
-
+# Container containing python bact modules
+#
+# seems I need venv
+# * qt needs binding mounts (can I include them here ?)
+# * but live table stops to work if pip does not install
+#   in venv ...
+# * using %environment to switch it on by default
+#
 Bootstrap: localimage
 From: ../bin/python-container.sif
 
@@ -16,14 +21,21 @@ From: ../bin/python-container.sif
     ../wheels/*.tar.gz /build/wheels/
     snippets/bact_packages.sh /build/snippets/
 
+
+%environment
+    . /build/venv/bin/activate
+
+
 %post
     export TOP_DIR=`pwd`
     mkdir -p build
     cd build
     export BUILD_DIR=`pwd`
 
-    # python3 -m venv venv
-    # . venv/bin/activate
+    # unhandy to call in
+    python3 -m venv /build/venv
+    . /build/venv/bin/activate
+
 
     ls /build/snippets
     echo $SHELL
@@ -79,6 +91,7 @@ From: ../bin/python-container.sif
     # rm -r build
     rm -r build/wheels
     apt-get clean
+
 
 %runscript
     exec python3 "$@"

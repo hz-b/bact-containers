@@ -1,8 +1,7 @@
 #
-# Author: Markus Ries               <markus.ries@helmholtz-berlin.de>
+# Author: Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
 #         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
-#         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
-#         Teresia Olsson            <teresia.olsson@helmholtz-berlin.de>
+#
 #
 # Container containing the core components of the digital twin
 
@@ -27,10 +26,6 @@ From: ../bin/epics7-pydevice.sif
 
     export DEBIAN_FRONTEND=noninteractive
 
-    # installed before building packages: some packages are local and
-    # need the token
-    # so that secrets only need to be inserted once
-    git config  --global credential.helper cache --timeout=36000
     pip cache dir
     # ls `pip cache dir`
 
@@ -81,6 +76,9 @@ From: ../bin/epics7-pydevice.sif
     # gtpsa-cpp and thor scsi ---------------------------------------------
     # c++ part copied from local
     pip3 install gtpsa thor_scsi --find-links file:///build/wheels --no-index
+    # why that extra turn ?
+    # I think its better to put analysis scripts in a separate container
+    pip3 install pyepics PyQt5 PySide2 --find-links file:///build/wheels --no-index
 
     # dt4acc --------------------------------------------------------------
     # echo 'building dt4acc--------------------------------------------------'
@@ -122,5 +120,8 @@ From: ../bin/epics7-pydevice.sif
 
     /sbin/ldconfig
 
+
 %runscript
+    # perhaps to be moded to %startscript
+    # currently run in an interactive manner
     (cd /build/dt4acc/iocBoot/iocvaccel && ./st.cmd)
