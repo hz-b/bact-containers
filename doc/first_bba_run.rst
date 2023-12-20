@@ -18,8 +18,10 @@ The measurement script is started using e.g.
 
 This complex command is currently necessary so that the Qt-Toolkit will work.
 The live plots use this tool kit. Then the plots are updated while the
-script is executed.
+script is executed. Use the option `-h` to see how to use this script.
 
+Typically running this script as given above will either fail or not
+show interesting results. An in detail description follows below.
 
 
 A more realistic example
@@ -82,33 +84,10 @@ The position names of the model are found in the vector
 
    /build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:names
 
+bsee `twin_variables.rst`_
 
-The Twiss paratmeters are given in the variables
+.. _`twin_variables.rst` : twin_variables.rst
 
-* `Pierre:DT:beam:alpha:x`
-* `Pierre:DT:beam:alpha:y`
-* `Pierre:DT:beam:beta:x`
-* `Pierre:DT:beam:beta:y`
-* `Pierre:DT:beam:nu:x`
-* `Pierre:DT:beam:nu:y`
-
-
-The working point can be inspected using
-
-* `Pierre:DT:beam:working_point:x`
-* `Pierre:DT:beam:working_point:y`
-
-for the Floquet coordinates. Its fractional contribution is given
-by
-
-* `Pierre:DT:beam:working_point:frac_x`
-* `Pierre:DT:beam:working_point:frac_y`
-
-The reading as provided by the tune measurement of the BESSY II
-machine  is given by
-
-* `Pierre:DT:TUNEZR:rdH`
-* `Pierre:DT:TUNEZR:rdV`
 
 
 Preparing for running the script
@@ -129,29 +108,29 @@ Now let's use the second shell so that we can see what is happening while the tw
 
 Here we now monitor the variables:
 
-  * the device the muxer selected (1. line)
-  * the value the muxer power converter is set to (2.line)
-  * the K  value of the Q1M1D1R as set within the IOC and as
-    reported back by the model (line 3)
-  * the *equivialent* current the main power converter had
-    to be changed to achieve the same gradient in
-    *this particular quadrupole* (line 4)
-  * the  *equivialent* current that would run through this
-    quadrupole (line 5)
-  * if the muxer power converter is *considered* connected
-    to this particular quadrupole
+* the device the muxer selected (1. line)
+* the value the muxer power converter is set to (2.line)
+* the K  value of the Q1M1D1R as set within the IOC and as
+  reported back by the model (line 3)
+* the *equivalent* current the main power converter had
+  to be changed to achieve the same gradient in
+  *this particular quadrupole* (line 4)
+* the  *equivalent* current that would run through this
+  quadrupole (line 5)
+* if the muxer power converter is *considered* connected
+  to this particular quadrupole
 
 
 Running the script
 ~~~~~~~~~~~~~~~~~~
 
-Now run the script as described in the begining in the document
+Now run the script as described in the beginning in the document
 
 What you should see:
 
 * each time the muxer power converter is changed (after every third run)
   the quadrupole current is updated (visible in the second terminal)
-* The twin then swiftly caluclates a new orbit
+* The twin then swiftly calculates a new orbit
 * this is read by the script and displayed in the terminal:
   please note that the upper row shows the orbit while the
   lower row shows the difference orbit (i.e. how much it differs
