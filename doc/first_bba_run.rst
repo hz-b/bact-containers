@@ -84,7 +84,7 @@ The position names of the model are found in the vector
 
    /build/epics-base/bin/linux-x86_64/caget Pierre:DT:beam:names
 
-bsee `twin_variables.rst`_
+A list of variables the twin exports are given in  `twin_variables.rst`_
 
 .. _`twin_variables.rst` : twin_variables.rst
 
