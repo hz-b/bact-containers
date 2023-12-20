@@ -20,6 +20,12 @@ From: ../bin/epics7-pydevice.sif
     # locally perbuilts: gtpsa-cpp and thor-scsi
     ../local/* /twin/
 
+
+%environment
+    # make epics commands findable
+    export PATH=/build/epics-base/bin/linux-x86_64/:$PATH
+
+
 %post
     # number of build jobs: preset for for a moderate machine
     # N_JOBS=48
