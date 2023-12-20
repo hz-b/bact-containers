@@ -86,28 +86,28 @@ So for the magnet Q1M1D1R this would be the variables
 
 * for the x plane:
 
-   * `Pierre:DT:Q1M1D1R:x:set`:
+  * `Pierre:DT:Q1M1D1R:x:set`:
       This allows setting the offset of this magnet.
 
-   * `Pierre:DT:Q1M1D1R:x:rdbk`
+  * `Pierre:DT:Q1M1D1R:x:rdbk`
       This allows inspecting which offset the magnet has in the model.
 
 * for the y plane:
 
-   * `Pierre:DT:Q1M1D1R:y:set`
-   * `Pierre:DT:Q1M1D1R:y:rdbk`
+  * `Pierre:DT:Q1M1D1R:y:set`
+  * `Pierre:DT:Q1M1D1R:y:rdbk`
 
 * for the roll:
 
-   * `Pierre:DT:Q1M1D1R:roll:set`
-   * `Pierre:DT:Q1M1D1R:roll:rdbk`
+  * `Pierre:DT:Q1M1D1R:roll:set`
+  * `Pierre:DT:Q1M1D1R:roll:rdbk`
 
 .. todo:: check the dimension of the roll. It should be radians
 
 
 **NB**: please do not apply a offset shift of roughly more than 0.3 mm
-        for a quadrupole. The orbit finder can be expected to fail to
-        find an orbit. Then all further calculations will be invalid.
+for a quadrupole. The orbit finder can be expected to fail to
+find an orbit. Then all further calculations will be invalid.
 
 The offsets are currently implemented for all quadrupoles.
 
