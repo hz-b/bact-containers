@@ -23,11 +23,12 @@ EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 
 CONTAINERS=$(PYTHON_IMG)                         \
-	   $(UBUNTU_BUILD_IMG)                   \
+           $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
-	   $(BIN_DIR)/bact-archiver-build.sif    \
+           $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/thor-scsi-lib-as-twin.sif  \
-	   $(BIN_DIR)/bact-container.sif
+           $(BIN_DIR)/bact-container.sif         \
+           $(BIN_DIR)/mongo-container.sif
 
 thor_scsi_DIR=$(SRC_DIR)/thor-scsi-lib/
 thor_scsi_build_DIR=$(BUILD_DIR)/thor-scsi-lib/
@@ -81,7 +82,7 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
-$(BIN_DIR)/bact-archiver-build.sif :  $(PIP_WHEEL_STAMP)        \
+$(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
                                        bact-archiver-build.sdef \
                                        $(UBUNTU_BUILD_IMG)      \
 
@@ -92,7 +93,7 @@ $(BIN_DIR)/bact-container.sif : bact-container.sdef               \
                                   $(BACT2_BESSYII_WHEEL_STAMP)    \
                                   $(PIP_WHEEL_STAMP)
 
-$(BIN_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef   \
+$(BIN_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef     \
                                          $(EPICS7_IMG)                \
                                          $(BACT2_BESSYII_WHEEL_STAMP) \
                                          $(GTPSA_WHEEL_STAMP)         \
@@ -101,7 +102,7 @@ $(BIN_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef   \
 
 
 # ------------------------------------------------------------------------------
-# down load wheels
+# download wheels
 
 $(PIP_WHEEL_STAMP) : lists/bact_package_list.txt
 	$(PYTHON_IMG) -m $(PIP_MODULE) download -r $< -d $(WHEELS_DIR) --check-build-dependencies \
