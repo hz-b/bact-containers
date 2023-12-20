@@ -27,17 +27,19 @@ HowTo build the containers
 
 * change into directory:
 
-```shell
 
-cd recipies
-```
+.. code:: shell
+
+   cd recipies
+
+
 
 * then type
 
-```shell
+.. code:: shell
 
-nice -15 make
-```
+   nice -15 make
+
 
 please note that make will use `nproc` to find out how many cores
 your machine will provide. it will use all of them. (Therfore I
