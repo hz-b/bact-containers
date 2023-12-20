@@ -85,12 +85,30 @@ The position names of the model are found in the vector
 
 The Twiss paratmeters are given in the variables
 
-    * `Pierre:DT:beam:alpha:x`
-    * `Pierre:DT:beam:alpha:y`
-    * `Pierre:DT:beam:beta:x`
-    * `Pierre:DT:beam:beta:y`
-    * `Pierre:DT:beam:nu:x`
-    * `Pierre:DT:beam:nu:y`
+* `Pierre:DT:beam:alpha:x`
+* `Pierre:DT:beam:alpha:y`
+* `Pierre:DT:beam:beta:x`
+* `Pierre:DT:beam:beta:y`
+* `Pierre:DT:beam:nu:x`
+* `Pierre:DT:beam:nu:y`
+
+
+The working point can be inspected using
+
+* `Pierre:DT:beam:working_point:x`
+* `Pierre:DT:beam:working_point:y`
+
+for the Floquet coordinates. Its fractional contribution is given
+by
+
+* `Pierre:DT:beam:working_point:frac_x`
+* `Pierre:DT:beam:working_point:frac_y`
+
+The reading as provided by the tune measurement of the BESSY II
+machine  is given by
+
+* `Pierre:DT:TUNEZR:rdH`
+* `Pierre:DT:TUNEZR:rdV`
 
 
 Preparing for running the script
