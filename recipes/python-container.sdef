@@ -34,7 +34,8 @@ From: ubuntu:22.04
 
 #       python3-matplotlib \
 #       python3-pandas \
-
+   # further builds require an updated pip
+   pip3 install --upgrade pip wheel
    # remove downloaded packages
    apt-get clean
    ## remove the whole cache
