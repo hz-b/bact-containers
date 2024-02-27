@@ -4,6 +4,7 @@ bact-analysis             \
 bact-bessyii-mls-ophyd    \
 bact-mls-ophyd            \
 bact-bessyii-ophyd        \
+lat2db        \
 "
 
 WHEELS_DIR_DEFAULT=file:///build/wheels

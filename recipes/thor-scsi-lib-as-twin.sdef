@@ -86,6 +86,9 @@ From: ../bin/epics7-pydevice.sif
     # I think its better to put analysis scripts in a separate container
     pip3 install pyepics PyQt5 PySide2 --find-links file:///build/wheels --no-index
 
+    #installing AT accelerator-toolbox todo: maybe create a at-as-twin.sdef in the future
+    pip3 install accelerator-toolbox
+
     # dt4acc --------------------------------------------------------------
     # echo 'building dt4acc--------------------------------------------------'
     cd dt4acc

@@ -28,7 +28,7 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/thor-scsi-lib-as-twin.sif  \
            $(BIN_DIR)/bact-container.sif         \
-           $(BIN_DIR)/mongo-container.sif
+           #$(BIN_DIR)/mongo-container.sif
 
 thor_scsi_DIR=$(SRC_DIR)/thor-scsi-lib/
 thor_scsi_build_DIR=$(BUILD_DIR)/thor-scsi-lib/
