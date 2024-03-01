@@ -1,9 +1,11 @@
 # needs to be defined by the location of this file
-T_DIR_ABS=$(shell cd .. && pwd)
+T_DIR_ABS = $(CURDIR)/../
 T_DIR=$(T_DIR_ABS)
-#T_DIR=/home/schnizer/Devel/github/thor-scsi-lib-container
+
 SRC_DIR=$(T_DIR)/external-repositories/
+# containers will be put here
 BIN_DIR=$(T_DIR)/bin/
+# python wheels are cached here
 WHEELS_DIR=$(T_DIR)/wheels
 LOCAL_DIR=$(T_DIR)/local
 BUILD_DIR=$(T_DIR)/build
@@ -63,10 +65,17 @@ distclean : clean
 clean : clean_prebuilts clean_wheels clean_local
 
 clean_prebuilts :
+	$(RM) $(RMFLAGS) $(GTPSA_BUILD_STAMP)
 	$(RM) $(RMFLAGS) -r $(gtpsa_build_DIR)
+	$(RM) $(RMFLAGS) $(THOR_SCSI_BUILD_STAMP)
 	$(RM) $(RMFLAGS) -r $(thor_scsi_build_DIR)
 
 clean_wheels :
+# first the stamp: if something goes wrong there would be an extra
+# download not a failed built
+	$(RM) $(RMFLAGS) $(BUILD_DIR)/pip-whl.stamp
+	$(RM) $(RMFLAGS) $(GTPSA_WHEEL_STAMP)
+	$(RM) $(RMFLAGS) $(THOR_SCSI_WHEEL_STAMP)
 	$(RM) $(RMFLAGS) $(WHEELS_DIR)/*.whl
 	$(RM) $(RMFLAGS) $(WHEELS_DIR)/*.tar.gz
 

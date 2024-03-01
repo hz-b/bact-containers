@@ -23,7 +23,10 @@ From: ../bin/ubuntu-build.sif
     rm -r /build/wheels
     apt-get clean
 
+    # was there already
     rm -rf /.cache
+    # seems that pip installs here
+    rm -rf /root/.cache
 
 %runscript
     exec python3 "$@"
