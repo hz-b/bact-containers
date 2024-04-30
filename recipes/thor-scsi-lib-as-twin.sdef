@@ -119,6 +119,7 @@ From: ../bin/epics7-pydevice.sif
     echo 'remove pip cache '
     pip3 cache purge
     rm -rf /.cache
+    rm -rf /root/.cache
     rm -rf /build/wheels
     rm -rf /build/thor-scsi
     rm -rf /build/gtpsa-cpp

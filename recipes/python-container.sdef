@@ -38,6 +38,9 @@ From: ubuntu:22.04
    pip3 install --upgrade pip wheel
    # remove downloaded packages
    apt-get clean
+   pip3 cache purge
+   rm -fr /root/.cache
+   rm -fr /.cache
    ## remove the whole cache
    ## rm -r /var/cache
 

@@ -1,9 +1,14 @@
 # needs to be defined by the location of this file
-T_DIR_ABS=$(shell cd .. && pwd)
+T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
-#T_DIR=/home/schnizer/Devel/github/thor-scsi-lib-container
+# for datascc
+T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
+
+
 SRC_DIR=$(T_DIR)/external-repositories/
+# containers will be put here
 BIN_DIR=$(T_DIR)/bin/
+# python wheels are cached here
 WHEELS_DIR=$(T_DIR)/wheels
 LOCAL_DIR=$(T_DIR)/local
 BUILD_DIR=$(T_DIR)/build
@@ -28,7 +33,7 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/thor-scsi-lib-as-twin.sif  \
            $(BIN_DIR)/bact-container.sif         \
-           #$(BIN_DIR)/mongo-container.sif
+           $(BIN_DIR)/mongo-container.sif
 
 thor_scsi_DIR=$(SRC_DIR)/thor-scsi-lib/
 thor_scsi_build_DIR=$(BUILD_DIR)/thor-scsi-lib/
@@ -52,7 +57,10 @@ STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(THOR_SCSI_BUILD_STAMP)     \
        $(THOR_SCSI_WHEEL_STAMP)
 
-all : $(CONTAINERS)
+all : echo_t_dir $(CONTAINERS)
+
+echo_t_dir :
+	@echo $(CURDIR)
 
 wheels: $(PIP_WHEEL_STAMP)
 
@@ -63,10 +71,17 @@ distclean : clean
 clean : clean_prebuilts clean_wheels clean_local
 
 clean_prebuilts :
+	$(RM) $(RMFLAGS) $(GTPSA_BUILD_STAMP)
 	$(RM) $(RMFLAGS) -r $(gtpsa_build_DIR)
+	$(RM) $(RMFLAGS) $(THOR_SCSI_BUILD_STAMP)
 	$(RM) $(RMFLAGS) -r $(thor_scsi_build_DIR)
 
 clean_wheels :
+# first the stamp: if something goes wrong there would be an extra
+# download not a failed built
+	$(RM) $(RMFLAGS) $(BUILD_DIR)/pip-whl.stamp
+	$(RM) $(RMFLAGS) $(GTPSA_WHEEL_STAMP)
+	$(RM) $(RMFLAGS) $(THOR_SCSI_WHEEL_STAMP)
 	$(RM) $(RMFLAGS) $(WHEELS_DIR)/*.whl
 	$(RM) $(RMFLAGS) $(WHEELS_DIR)/*.tar.gz
 
@@ -104,9 +119,12 @@ $(BIN_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef     \
 # ------------------------------------------------------------------------------
 # download wheels
 
-$(PIP_WHEEL_STAMP) : lists/bact_package_list.txt
-	$(PYTHON_IMG) -m $(PIP_MODULE) download -r $< -d $(WHEELS_DIR) --check-build-dependencies \
-	&& $(TOUCH) $@
+$(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
+	( cd $(T_DIR) \
+              && $(PYTHON_IMG) -m $(PIP_MODULE) download -r $^ \
+                  -d wheels/ --check-build-dependencies \
+              && $(TOUCH) $@ \
+       )
 
 #------------------------------------------------------------
 # bact packages to wheels
