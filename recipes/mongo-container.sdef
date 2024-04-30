@@ -36,32 +36,18 @@ From: ubuntu:22.04
 
     # Importing the public key
     curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor     
-    # install the required signature ... 
-    # apt-key adv --keyserver-options http-proxy="$HTTP_PROXY" --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+    # install the required signature ...
+    # need to find out how to get that working
+    # apt-key adv --keyserver-options http-proxy="$HTTP_PROXY" --keyserver hkp://keyserver.ubuntu.com:80 --recv 160D26BB1785BA38
     
     #Obtaining and installing MongoDB for Debian 9 (Stretch)
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list
 
     apt-get -y update
     apt-get install -y mongodb-org
     
     #Giving access to the mongodb user from the mongodb group user (these are the defaults from MongoDB)
     chown -R mongodb:mongodb /data/db
-
-    ## # does not work in this manner
-    ## environment_ulimits=/build/etc/environment.sh
-    ## echo '# processes'           >  $environment_ulimits
-    ## echo 'ulimit -u 64000'	 >> $environment_ulimits
-    ## echo '# file descriptors'	 >> $environment_ulimits
-    ## echo 'ulimit -n 64000'	 >> $environment_ulimits
-    ## echo '# pending signals'	 >> $environment_ulimits
-    ## echo 'ulimit -i 192276'	 >> $environment_ulimits
-    ## echo '# posix messsage queue'>> $environment_ulimits
-    ## echo 'ulimit -q 819200'	 >> $environment_ulimits
-    ## echo '# EOF'                 >> $environment_ulimits
-    ## cat /build/etc/environment.sh
-
-
 
 %startscript
 
