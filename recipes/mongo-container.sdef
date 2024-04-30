@@ -11,11 +11,15 @@ Bootstrap: docker
 From: ubuntu:22.04
 
 
+%files
+    snippets/mongodb_start.sh /usr/bin/
+
+
 %environment
 
     # Setting up the hostname and port
     HOSTNAME=127.0.0.1
-    PORT=27017
+    PORT=47017
     export HOSTNAME PORT
 
 
@@ -40,28 +44,19 @@ From: ubuntu:22.04
     # need to find out how to get that working
     # apt-key adv --keyserver-options http-proxy="$HTTP_PROXY" --keyserver hkp://keyserver.ubuntu.com:80 --recv 160D26BB1785BA38
     
-    #Obtaining and installing MongoDB for Ubuntu
+    # Obtaining and installing MongoDB for Ubuntu
     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list
 
     apt-get -y update
-    apt-get install -y mongodb-org
+    apt-get install -y mongodb-org bash
     
-    #Giving access to the mongodb user from the mongodb group user (these are the defaults from MongoDB)
+    # Giving access to the mongodb user from the mongodb group user (these are the defaults from MongoDB)
     chown -R mongodb:mongodb /data/db
+    chmod +x /usr/bin/mongodb_start.sh
 
-%startscript
 
-    echo "This is a read only test installation. It is currently neither"
-    echo "mapping data in not storing it. Consider to install your local"
-    echo "instance for production use"
-
-    # Stops the daemon if it is already running
-    mongod --repair
-    # Starts the daemon
-    echo -n "Starting mongo database daemon ... "
-    mongod
-    echo "done"
-    # Starts the mongo shell in the hostname and port set from environment
-    echo "Starting mongo shell connected to $HOSTNAME:$PORT "
-    mongo --host $HOSTNAME:$PORT
+# %startscript
+%runscript
+   /usr/bin/mongodb_start.sh
+   /bin/bash
     
