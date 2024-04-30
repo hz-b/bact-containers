@@ -1,3 +1,4 @@
+# mongodb setup
 #
 # Author: Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
 #         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
@@ -9,7 +10,6 @@
 Bootstrap: docker
 From: ubuntu:22.04
 
-# mongodb setup
 
 %environment
 
@@ -40,7 +40,7 @@ From: ubuntu:22.04
     # need to find out how to get that working
     # apt-key adv --keyserver-options http-proxy="$HTTP_PROXY" --keyserver hkp://keyserver.ubuntu.com:80 --recv 160D26BB1785BA38
     
-    #Obtaining and installing MongoDB for Debian 9 (Stretch)
+    #Obtaining and installing MongoDB for Ubuntu
     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list
 
     apt-get -y update
