@@ -1,6 +1,9 @@
 # needs to be defined by the location of this file
-T_DIR_ABS = $(CURDIR)/../
+T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
+# for datascc
+T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
+
 
 SRC_DIR=$(T_DIR)/external-repositories/
 # containers will be put here
@@ -30,7 +33,7 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/thor-scsi-lib-as-twin.sif  \
            $(BIN_DIR)/bact-container.sif         \
-           #$(BIN_DIR)/mongo-container.sif
+           $(BIN_DIR)/mongo-container.sif
 
 thor_scsi_DIR=$(SRC_DIR)/thor-scsi-lib/
 thor_scsi_build_DIR=$(BUILD_DIR)/thor-scsi-lib/
@@ -54,7 +57,10 @@ STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(THOR_SCSI_BUILD_STAMP)     \
        $(THOR_SCSI_WHEEL_STAMP)
 
-all : $(CONTAINERS)
+all : echo_t_dir $(CONTAINERS)
+
+echo_t_dir :
+	@echo $(CURDIR)
 
 wheels: $(PIP_WHEEL_STAMP)
 
@@ -113,9 +119,12 @@ $(BIN_DIR)/thor-scsi-lib-as-twin.sif : thor-scsi-lib-as-twin.sdef     \
 # ------------------------------------------------------------------------------
 # download wheels
 
-$(PIP_WHEEL_STAMP) : lists/bact_package_list.txt
-	$(PYTHON_IMG) -m $(PIP_MODULE) download -r $< -d $(WHEELS_DIR) --check-build-dependencies \
-	&& $(TOUCH) $@
+$(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
+	( cd $(T_DIR) \
+              && $(PYTHON_IMG) -m $(PIP_MODULE) download -r $^ \
+                  -d wheels/ --check-build-dependencies \
+              && $(TOUCH) $@ \
+       )
 
 #------------------------------------------------------------
 # bact packages to wheels

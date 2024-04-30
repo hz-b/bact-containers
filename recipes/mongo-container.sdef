@@ -13,29 +13,35 @@ From: ubuntu:22.04
 
 %environment
 
-    #Setting up the hostname and port
+    # Setting up the hostname and port
     HOSTNAME=127.0.0.1
     PORT=27017
     export HOSTNAME PORT
 
+
 %help
-    Singularity container running MongoDB v? Community Edition for Ubuntu
+    Singularity container running MongoDB v7 Community Edition for Ubuntu
 	
 
 %post
-    #Setting up where data will reside
+    # Setting up where data will reside
     mkdir -p /data/db
-    #Give access to the folder
+    # Give access to the folder
     chmod -R 777 /data/db
     
-    #Needed dependencies from GnuPG
-    apt-get update && apt-get install -y gnupg
-    
-    #Importing the public key
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+    # Needed dependencies from GnuPG
+    apt-get update && apt-get install -y gnupg curl
+
+    HTTP_PROXY=http://http-proxy.helmholtz-berlin.de:3128/
+
+    # Importing the public key
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor     
+    # install the required signature ... 
+    # apt-key adv --keyserver-options http-proxy="$HTTP_PROXY" --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
     
     #Obtaining and installing MongoDB for Debian 9 (Stretch)
-    echo "deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/4.0 main" | tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
     apt-get -y update
     apt-get install -y mongodb-org
     
@@ -59,10 +65,17 @@ From: ubuntu:22.04
 
 %startscript
 
+    echo "This is a read only test installation. It is currently neither"
+    echo "mapping data in not storing it. Consider to install your local"
+    echo "instance for production use"
+
     # Stops the daemon if it is already running
     mongod --repair
     # Starts the daemon
+    echo -n "Starting mongo database daemon ... "
     mongod
+    echo "done"
     # Starts the mongo shell in the hostname and port set from environment
+    echo "Starting mongo shell connected to $HOSTNAME:$PORT "
     mongo --host $HOSTNAME:$PORT
     
