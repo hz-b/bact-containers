@@ -17,8 +17,6 @@ From: ../bin/epics7-pydevice.sif
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
     ../external-repositories/dt4acc /build/
-    # locally perbuilts: gtpsa-cpp and thor-scsi
-    ../local/* /twin/
 
 
 %environment
@@ -27,13 +25,9 @@ From: ../bin/epics7-pydevice.sif
 
 
 %post
-    # number of build jobs: preset for for a moderate machine
-    # N_JOBS=48
-
     export DEBIAN_FRONTEND=noninteractive
 
     pip cache dir
-    # ls `pip cache dir`
 
     # setups ------------------------------------------------------------
     # put here so less surprise down after a long build time
@@ -79,14 +73,9 @@ From: ../bin/epics7-pydevice.sif
     # installing bact packages
     /bin/bash /build/snippets/bact_packages.sh
 
-    # gtpsa-cpp and thor scsi ---------------------------------------------
-    # c++ part copied from local
-    pip3 install gtpsa thor_scsi --find-links file:///build/wheels --no-index
-    # why that extra turn ?
     # I think its better to put analysis scripts in a separate container
     pip3 install pyepics PyQt5 PySide2 --find-links file:///build/wheels --no-index
 
-    #installing AT accelerator-toolbox todo: maybe create a at-as-twin.sdef in the future
     pip3 install accelerator-toolbox
 
     # dt4acc --------------------------------------------------------------
@@ -121,8 +110,6 @@ From: ../bin/epics7-pydevice.sif
     rm -rf /.cache
     rm -rf /root/.cache
     rm -rf /build/wheels
-    rm -rf /build/thor-scsi
-    rm -rf /build/gtpsa-cpp
 
     # find / -type f > /var/log/files.txt || echo 'done'
     # chmod 666 /var/log/files.txt
