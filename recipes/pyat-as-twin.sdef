@@ -23,76 +23,50 @@ From: ../bin/epics7-pydevice.sif
     # make epics commands findable
     export PATH=/build/epics-base/bin/linux-x86_64/:$PATH
 
+    . /.singularity_bash
 
 %post
     export DEBIAN_FRONTEND=noninteractive
 
+    cd /build/
+
+    python3 -m venv --system-site-packages /build/venv
+    # activate the enivornment for the build process
+    echo '. /build/venv/bin/activate' > /.singularity_bash
+    chmod 555 /.singularity_bash
+
+    . /.singularity_bash
     pip cache dir
-
-    # setups ------------------------------------------------------------
-    # put here so less surprise down after a long build time
-    CMAKE_BUILD_DIR=build
-    if [ -e  "$CMAKE_BUILD_DIR" ]
-    then
-       if [ ! -d "$CMAKE_BUILD_DIR" ]
-       then
-	    echo "build exists and is not a dir!"
-       fi
-    else
-        mkdir $CMAKE_BUILD_DIR
-    fi
-    cd $CMAKE_BUILD_DIR
-    CMAKE_BUILD_DIR=`pwd`
-    echo "CMAKE_BUILD_DIR: $CMAKE_BUILD_DIR"
-
-    # packages built here are installed to /twin
-    # thor scsi needs to find gtpsa cmake config
-    CMAKE_PREFIX_PATH=/twin/lib/cmake
-
-    # add /twin/lib so that it will be used by ldconfig
-    # do not forget to run ldconfig after everything has been
-    # installed
-    opt_conf_path=/etc/ld.so.conf.d/twin.conf
-    echo '# parts built during process go here' >  $opt_conf_path
-    echo '/twin/lib'                            >> $opt_conf_path
-    echo '#EOF'                                 >> $opt_conf_path
-
-    echo "ld config for opt"
-    cat $opt_conf_path
-    echo "Release local"
-    cat $release_local
-
-    # run ldconfig ... to check that it exists and works
-    # don't need to find out after half an hour build
-    /sbin/ldconfig
 
     # end setups ---------------------------------------------------------
     # update pip
-    pip3 install --upgrade pip wheel
+    pip3 install --upgrade -q pip wheel
 
     # installing bact packages
     /bin/bash /build/snippets/bact_packages.sh
 
     # I think its better to put analysis scripts in a separate container
-    pip3 install pyepics PyQt5 PySide2 --find-links file:///build/wheels --no-index
+    pip3 install pyepics PyQt5 PySide2 -q --find-links file:///build/wheels --no-index
 
-    pip3 install accelerator-toolbox
+    pip3 install accelerator-toolbox -q --find-links file:///build/wheels --no-index
 
+    # build dir------------------------------------------------------------
+    cd /build
     # dt4acc --------------------------------------------------------------
     # echo 'building dt4acc--------------------------------------------------'
+    cd /build
     cd dt4acc
     make -j $N_JOBS
     make -j $N_JOBS install
+
+    pip3 install src/  --find-links file:///build/wheels --no-index
+
     cd ../
     echo 'building and install python packages done -----------------------'
     # echo 'end building dt4acc----------------------------------------------'
     # end dt4acc ----------------------------------------------------------
 
     echo 'cleaning build directories --------------------------------------'
-    # epics pydevice thor scsi / gtpsa builds and installations done
-    # here do clean up
-    # but not yet .. need to see how epics is installed
-    # rm -rf /$CMAKE_BUILD_DIR
 
     apt-get clean
     rm -rf /var/lib/apt/lists/*

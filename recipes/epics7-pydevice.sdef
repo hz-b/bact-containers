@@ -38,6 +38,7 @@ From: ubuntu:22.04
        python3-numpy-dev \
        pybind11-dev \
        python3-pip \
+       python3-venv \
        python3-pybind11 \
        python3-setuptools \
        python3-tk \
