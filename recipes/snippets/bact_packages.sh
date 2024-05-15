@@ -15,7 +15,7 @@ pip_install_use_cache ()
     local status=-1
 
     echo "pip install: with cache $WHEELS_DIR using args " $@
-    if python3 -m pip install --progress-bar=off --find-links "$WHEELS_DIR" --no-index --check-build-dependencies $@
+    if python3 -m pip install -q --progress-bar=off --find-links "$WHEELS_DIR" --no-index --check-build-dependencies $@
     then
 	status=$?
 	echo "pip install used wheel dir $WHEELS_DIR"
@@ -23,7 +23,7 @@ pip_install_use_cache ()
 	echo '# ----------------------------------------------------------------------'
 	echo "pip install used wheel dir $WHEELS_DIR returned status $?, continuing without dir"
 	echo '# ----------------------------------------------------------------------'
-	python3 -m pip install --progress-bar=off $@
+	python3 -m pip install -q --progress-bar=off $@
 	status=$?
     fi
     return $status

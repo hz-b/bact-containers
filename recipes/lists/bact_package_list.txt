@@ -35,6 +35,11 @@ xarray>=2023.11.0
 h5py
 h5netcdf
 
+vtk
+
+# twin
+accelerator-toolbox
+
 # required for building
 wheel
 setuptools
