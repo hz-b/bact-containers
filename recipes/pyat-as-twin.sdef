@@ -12,11 +12,12 @@ Bootstrap: localimage
 From: ../bin/epics7-pydevice.sif
 
 %files
-    snippets/bact_packages.sh /build/snippets/
+    snippets/*.sh /build/snippets/
     # guessing where wheels will be searched for
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
     ../external-repositories/dt4acc /build/
+    ../external-repositories/lat2db /build/
 
 
 %environment
@@ -38,12 +39,17 @@ From: ../bin/epics7-pydevice.sif
     . /.singularity_bash
     pip cache dir
 
-    # end setups ---------------------------------------------------------
+    #  ---------------------------------------------------------
     # update pip
     pip3 install --upgrade -q pip wheel
 
-    # installing bact packages
-    /bin/bash /build/snippets/bact_packages.sh
+    # installing required packages
+    . /build/snippets/bact_package_functions.sh
+
+    echo "adding bact packages"
+    install_python_package_from_github bact-device-models
+    echo "added bact packages"
+
 
     # I think its better to put analysis scripts in a separate container
     pip3 install pyepics PyQt5 PySide2 -q --find-links file:///build/wheels --no-index
@@ -53,13 +59,19 @@ From: ../bin/epics7-pydevice.sif
     # build dir------------------------------------------------------------
     cd /build
     # dt4acc --------------------------------------------------------------
-    # echo 'building dt4acc--------------------------------------------------'
+    echo 'building lat2db, dt4acc-----------------------------------------'
     cd /build
+    cd lat2db
+    #    pip3 install .  --find-links file:///build/wheels --no-index
+    pip3 install .
+    cd ../
+
     cd dt4acc
     make -j $N_JOBS
     make -j $N_JOBS install
 
     pip3 install src/  --find-links file:///build/wheels --no-index
+    pip3 install src/
 
     cd ../
     echo 'building and install python packages done -----------------------'
