@@ -7,3 +7,6 @@
 [submodule "external-repositories/dt4acc"]
 	path = external-repositories/dt4acc
 	url = https://github.com/hz-b/dt4acc.git
+[submodule "external-repositories/lat2db"]
+	path = external-repositories/lat2db
+	url = https://github.com/hz-b/lat2db.git
