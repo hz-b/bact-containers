@@ -96,7 +96,7 @@ $(BIN_DIR)/bact-container.sif : bact-container.sdef               \
 
 $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 	( cd $(T_DIR) \
-              && $(PYTHON_IMG) -m $(PIP_MODULE) download -r $^ \
+              && $(PYTHON_IMG) -m $(PIP_MODULE) download -q -r $^ \
                   -d wheels/ --check-build-dependencies \
               && $(TOUCH) $@ \
        )
@@ -113,6 +113,7 @@ $(BACT_ARCHIVER_WHEEL_STAMP) : $(BACT_ARCHIVER_BUILD_IMG)
           cd $(BACT_ARCHIVER_DIR)                                          \
           && $(BACT_ARCHIVER_BUILD_IMG) setup.py build_proto_c bdist_wheel -d $(WHEELS_DIR) \
         ) && $(TOUCH) $@
+
 
 # bact2-bessyii to avoid entering the password
 BACT2_BESSYII_DIR=$(SRC_DIR)/bact2_bessyii/
