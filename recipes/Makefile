@@ -2,7 +2,7 @@
 T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
 # for datascc
-T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
+# T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
 
 
 SRC_DIR=$(T_DIR)/external-repositories/
