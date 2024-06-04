@@ -8,7 +8,7 @@ build-singularity:
   image:
     name: quay.io/singularity/singularity:v3.7.0
     entrypoint: [""]
-  stage: singularity
+  stage: deploy
   script:
     - build bin/python-container.sif recipes/python-container.sdef
   only:
