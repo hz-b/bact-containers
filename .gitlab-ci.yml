@@ -42,7 +42,10 @@ test2:
     - echo "For example run a lint test"
 
 deploy1:
-  stage: deploy
+  stage: Build containers for deploying
   script:
+    - echo "Building containers ----------------------------------------"
+    - echo nice -15 make -C recipes
+    - echo "Built containers    ----------------------------------------"
     - echo "Do your deploy here"
   environment: production
