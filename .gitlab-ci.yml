@@ -2,54 +2,20 @@
 # See https://docs.gitlab.com/ee/ci/yaml/index.html for all available options
 
 # you can delete this line if you're not using Docker
-image: ubuntu:latest
 
-before_script:
-  - echo "set up image for building"
-  -    apt-get update -q=2
-  - apt-get install -q=2 -y --no-install-recommends \
-        python3-dev \
-        python3-pip \
-        python3-wheel \
-        python3-setuptools \
-        protobuf-compiler \
-        libprotobuf-dev \
-        g++ \
-        make \
-        build-essential \
-        bash \
-        less
 
-  - ls
-
-after_script:
-  - echo "After script section"
-  - echo "For example you might do some cleanup here"
-
-build1:
-  stage: build
+build-singularity:
+  image:
+    name: quay.io/singularity/singularity:v3.7.0
+    entrypoint: [""]
+  stage: singularity
   script:
-    - echo "Building containers ----------------------------------------"
-    - nice -15 make -C recipes
-    - echo "Built containers    ----------------------------------------"
-
-test1:
-  stage: test
-  script:
-    - echo "Do a test here"
-    - echo "For example run a test suite"
-
-test2:
-  stage: test
-  script:
-    - echo "Do another parallel test here"
-    - echo "For example run a lint test"
-
-deploy1:
-  stage: deploy
-  script:
-    - echo "Building containers ----------------------------------------"
-    - echo nice -15 make -C recipes
-    - echo "Built containers    ----------------------------------------"
-    - echo "Do your deploy here"
-  environment: production
+    - build bin/python-container.sif recipes/python-container.sdef
+  only:
+    changes:
+      - recipes/python-container.sdef
+  artifacts:
+    paths:
+      - bin/python-container.sif
+    expire_in: 10 min
+  interruptible: true
