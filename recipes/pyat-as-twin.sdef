@@ -16,7 +16,7 @@ From: ../bin/epics7-pydevice.sif
     # guessing where wheels will be searched for
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
-    ../external-repositories/dt4acc /build/
+    ../external-repositories/dt4acc/ /build/
     ../external-repositories/lat2db /build/
 
 
@@ -50,10 +50,6 @@ From: ../bin/epics7-pydevice.sif
     install_python_package_from_github bact-device-models
     echo "added bact packages"
 
-
-    # I think its better to put analysis scripts in a separate container
-    pip3 install pyepics PyQt5 PySide2 -q --find-links file:///build/wheels --no-index
-
     pip3 install accelerator-toolbox -q --find-links file:///build/wheels --no-index
 
     # build dir------------------------------------------------------------
@@ -66,12 +62,9 @@ From: ../bin/epics7-pydevice.sif
     pip3 install .
     cd ../
 
-    cd dt4acc
-    make -j $N_JOBS
-    make -j $N_JOBS install
-
-    pip3 install src/  --find-links file:///build/wheels --no-index
-    pip3 install src/
+    # install dt4acc package
+    pip3 install dt4acc/src/  --find-links file:///build/wheels --no-index
+    pip3 install dt4acc/src/
 
     cd ../
     echo 'building and install python packages done -----------------------'

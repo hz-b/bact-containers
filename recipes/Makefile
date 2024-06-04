@@ -24,20 +24,25 @@ N_JOBS=$(shell nproc)
 APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP_MODULE=pip
-CMAKE=cmake
+LN_S=ln -s
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
+DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
 
 epics_DIR=$(SRC_DIR)/epics-base/
+pydevice_DIR=$(SRC_DIR)/PyDevice/
+dt4acc_DIR=$(SRC_DIR)/dt4acc/
+RELEASE_LOCAL=$(SRC_DIR)/RELEASE.local
+PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 CONTAINERS=$(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
+           $(DT_IMG)                             \
            $(BIN_DIR)/bact-archiver-build.sif    \
-           $(BIN_DIR)/pyat-as-twin.sif           \
            $(BIN_DIR)/bact-container.sif         \
            $(BIN_DIR)/mongo-container.sif
 
@@ -46,11 +51,15 @@ BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
+PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
+DT4ACC_BUILD_STAMP=$(BUILD_DIR)/dt4acc-built.stamp
 
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
        $(BACT2_BESSYII_WHEEL_STAMP) \
-       $(EPICS_BUILD_STAMP)
+       $(EPICS_BUILD_STAMP)         \
+       $(PYDEVICE_BUILD_STAMP)
+
 
 all : echo_t_dir $(CONTAINERS)
 
@@ -77,6 +86,14 @@ clean_local :
 	$(RM) $(RMFLAGS) -r $(LOCAL_DIR)/lib
 	$(RM) $(RMFLAGS) -r $(LOCAL_DIR)/include
 
+
+clean_prebuilts :
+	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
+	@make clean -C $(epics_DIR)
+	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
+	@make clean -C $(pydevice_DIR)
+
+
 $(BIN_DIR)/%.sif : %.sdef
 	$(APPTAINER) build $@ $<
 
@@ -84,7 +101,9 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
-$(EPICS7_IMG) : $(EPICS_BUILD_STAMP) epics7-pydevice.sdef
+$(DT_IMG) : $(DT4ACC_BUILD_STAMP) $(EPICS7_IMG) 
+
+$(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
 
 
 $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
@@ -111,11 +130,29 @@ $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 # ------------------------------------------------------------
 # build epics
 
+$(DT4ACC_BUILD_STAMP) : $(PYDEVICE_BUILD_STAMP)
+	$(UBUNTU_BUILD_IMG) -c "make -C $(dt4acc_DIR) -j $(N_JOBS)" \
+         && $(TOUCH) $@
+
+$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(PYDEV_RELEASE_LOCAL)
+	$(UBUNTU_BUILD_IMG) -c "make -C $(pydevice_DIR) -j $(N_JOBS)" \
+         && $(TOUCH) $@
+
+$(PYDEV_RELEASE_LOCAL) : $(RELEASE_LOCAL)
+	$(LN_S) $^ $@
+
 $(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_IMG)
-	(                                                                \
-          cd $(epics_DIR)                                               \
-          && $(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
-        ) && $(TOUCH) $@
+	$(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
+        && $(TOUCH) $@
+
+
+$(RELEASE_LOCAL) : 
+	@echo "Creating $(RELEASE_LOCAL)"
+	@echo "# Release.local ... reflecting local build" >  $@
+	@echo "HOME_DEVEL=$(SRC_DIR)"                      >> $@
+	@echo "EPICS_BASE=$(epics_DIR)"                    >> $@
+	@echo "PYDEVICE=$(pydevice_DIR)"                   >> $@
+	@echo "#EOF"                                       >> $@
 
 
 #------------------------------------------------------------

@@ -13,6 +13,7 @@ From: ubuntu:22.04
 %files
     ../external-repositories/epics-base/bin/linux-x86_64/ /opt/epics/bin/
     ../external-repositories/epics-base/lib/linux-x86_64/ /opt/epics/lib/
+    ../external-repositories/PyDevice/lib/linux-x86_64/ /opt/epics/lib/
 
 %post
     # number of build jobs: preset for for a moderate machine
@@ -22,18 +23,19 @@ From: ubuntu:22.04
     apt-get -q=2 update
 
     apt-get -q=2 install -y --no-install-recommends \
+       libpython3.10 \
+       python3-minimal \
+       python3-pip \
+       python3-venv \
        libreadline8 \
        less \
        file \
        bash \
+       git
 
 
-    # only required for docker not for singularity
-    ## # For epics usage
-    ## # EXPOSE 5064/tcp
-    ## # EXPOSE 5065/tcp
-    ## # EXPOSE 5064/udp
-    ## #EXPOSE 5065/udp
+    # need up to date version
+    python3 -m pip install -U pip wheel
 
     # setups ------------------------------------------------------------
     # put here so less surprise down after a long build time
@@ -46,14 +48,6 @@ From: ubuntu:22.04
     echo '/opt/lib'                             >> $opt_conf_path
     echo '/opt/epics/lib'                       >> $opt_conf_path
     echo '#EOF'                                 >> $opt_conf_path
-
-    # let epics know where it finds the stuff ...
-    release_local=RELEASE.local
-    echo "# Release.local ... reflecting twin " >  $release_local
-    echo "HOME_DEVEL=$CMAKE_BUILD_DIR"          >> $release_local
-    echo 'EPICS_BASE=$(HOME_DEVEL)/epics-base'  >> $release_local
-    echo 'PYDEVICE=$(HOME_DEVEL)/PyDevice'      >> $release_local
-    echo '#EOF'                                 >> $release_local
 
     echo "ld config for opt"
     cat $opt_conf_path
@@ -68,13 +62,6 @@ From: ubuntu:22.04
     # run ldconfig ... to check that it exists and works
     # don't need to find out after half an hour build
     /sbin/ldconfig
-
-
-    echo 'cleaning build directories --------------------------------------'
-    # epics pydevice thor scsi / gtpsa builds and installations done
-    # here do clean up
-    # but not yet .. need to see how epics is installed
-    # rm -rf /$CMAKE_BUILD_DIR
 
     echo '### remove apt-get cache ###'
     apt-get clean
