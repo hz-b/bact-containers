@@ -1,0 +1,110 @@
+#
+# Author: Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+#
+# Container containing the core components of the digital twin
+
+# Bootstrap: docker
+# From: ubuntu:22.04
+
+Bootstrap: localimage
+From: ../bin/epics7-pydevice.sif
+
+%files
+    snippets/*.sh /build/snippets/
+    # guessing where wheels will be searched for
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
+    ../external-repositories/dt4acc /build/
+    ../external-repositories/lat2db /build/
+
+
+%environment
+    # make epics commands findable
+    export PATH=/build/epics-base/bin/linux-x86_64/:$PATH
+
+    . /.singularity_bash
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    cd /build/
+
+    python3 -m venv --system-site-packages /build/venv
+    # activate the enivornment for the build process
+    echo '. /build/venv/bin/activate' > /.singularity_bash
+    chmod 555 /.singularity_bash
+
+    . /.singularity_bash
+    pip cache dir
+
+    #  ---------------------------------------------------------
+    # update pip
+    pip3 install --upgrade -q pip wheel
+
+    # installing required packages
+    . /build/snippets/bact_package_functions.sh
+
+    echo "adding bact packages"
+    install_python_package_from_github bact-device-models
+    echo "added bact packages"
+
+
+    # I think its better to put analysis scripts in a separate container
+    pip3 install pyepics PyQt5 PySide2 -q --find-links file:///build/wheels --no-index
+
+    pip3 install accelerator-toolbox -q --find-links file:///build/wheels --no-index
+
+    # build dir------------------------------------------------------------
+    cd /build
+    # dt4acc --------------------------------------------------------------
+    echo 'building lat2db, dt4acc-----------------------------------------'
+    cd /build
+    cd lat2db
+    #    pip3 install .  --find-links file:///build/wheels --no-index
+    pip3 install .
+    cd ../
+
+    cd dt4acc
+    make -j $N_JOBS
+    make -j $N_JOBS install
+
+    pip3 install src/  --find-links file:///build/wheels --no-index
+    pip3 install src/
+
+    cd ../
+    echo 'building and install python packages done -----------------------'
+    # echo 'end building dt4acc----------------------------------------------'
+    # end dt4acc ----------------------------------------------------------
+
+    echo 'cleaning build directories --------------------------------------'
+
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    echo "---- pip list --- "
+    pip3 list
+    echo "---- pip list --- "
+    echo "---- pip cache --- "
+    pip3 cache info
+    pip3 cache list
+    echo "---- pip cache --- "
+
+    echo 'remove pip cache '
+    pip3 cache purge
+    rm -rf /.cache
+    rm -rf /root/.cache
+    rm -rf /build/wheels
+
+    # find / -type f > /var/log/files.txt || echo 'done'
+    # chmod 666 /var/log/files.txt
+    echo 'cleaning build directories done ------------------------------------'
+
+    /sbin/ldconfig
+
+
+%runscript
+    # perhaps to be moded to %startscript
+    # currently run in an interactive manner
+    (cd /build/dt4acc/iocBoot/iocvaccel && ./st.cmd)

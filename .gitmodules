@@ -1,15 +1,12 @@
 [submodule "external-repositories/bact-archiver"]
 	path = external-repositories/bact-archiver
 	url = https://github.com/hz-b/bact-archiver.git
-[submodule "external-repositories/gtpsa-cpp"]
-	path = external-repositories/gtpsa-cpp
-	url = https://github.com/hz-b/gtpsa-cpp
-[submodule "external-repositories/thor-scsi-lib"]
-	path = external-repositories/thor-scsi-lib
-	url = https://github.com/hz-b/thor-scsi-lib
 [submodule "external-repositories/bact2_bessyii"]
 	path = external-repositories/bact2_bessyii
 	url = https://github.com/hz-b/bact2_bessyii.git
 [submodule "external-repositories/dt4acc"]
 	path = external-repositories/dt4acc
 	url = https://github.com/hz-b/dt4acc.git
+[submodule "external-repositories/lat2db"]
+	path = external-repositories/lat2db
+	url = https://github.com/hz-b/lat2db.git
