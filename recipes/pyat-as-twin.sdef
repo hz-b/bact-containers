@@ -107,4 +107,4 @@ From: ../bin/epics7-pydevice.sif
 %runscript
     # perhaps to be moded to %startscript
     # currently run in an interactive manner
-    (cd /build/dt4acc/iocBoot/iocvaccel && ./st.cmd)
+    (cd /build/dt4acc/iocBoot/iocvaccel && ./st.sh)
