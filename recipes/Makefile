@@ -31,6 +31,8 @@ UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 
+epics_DIR=$(SRC_DIR)/epics-base/
+
 CONTAINERS=$(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
@@ -43,10 +45,12 @@ CONTAINERS=$(PYTHON_IMG)                         \
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
+EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
-       $(BACT2_BESSYII_WHEEL_STAMP)
+       $(BACT2_BESSYII_WHEEL_STAMP) \
+       $(EPICS_BUILD_STAMP)
 
 all : echo_t_dir $(CONTAINERS)
 
@@ -80,6 +84,9 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
+$(EPICS7_IMG) : $(EPICS_BUILD_STAMP) epics7-pydevice.sdef
+
+
 $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
                                        bact-archiver-build.sdef \
                                        $(UBUNTU_BUILD_IMG)      \
@@ -100,6 +107,16 @@ $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
                   -d wheels/ --check-build-dependencies \
               && $(TOUCH) $@ \
        )
+
+# ------------------------------------------------------------
+# build epics
+
+$(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_IMG)
+	(                                                                \
+          cd $(epics_DIR)                                               \
+          && $(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
+        ) && $(TOUCH) $@
+
 
 #------------------------------------------------------------
 # bact packages to wheels

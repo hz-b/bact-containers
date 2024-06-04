@@ -10,3 +10,6 @@
 [submodule "external-repositories/lat2db"]
 	path = external-repositories/lat2db
 	url = https://github.com/hz-b/lat2db.git
+[submodule "external-repositories/epics-base"]
+	path = external-repositories/epics-base
+	url = https://github.com/epics-base/epics-base
