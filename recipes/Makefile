@@ -171,7 +171,7 @@ $(RELEASE_LOCAL) :
 $(CONFIG_SITE_LOCAL) :
 	@echo "Creating $(CONFIG_SITE_LOCAL)"
 	@echo "# configuring local site                  " >  $@
-	@echo "STATIC_BUILD=YES"                           >> $@
+#@echo "STATIC_BUILD=YES"                           >> $@
 	@echo "#EOF"                                       >> $@
 
 #------------------------------------------------------------
