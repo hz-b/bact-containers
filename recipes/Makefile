@@ -30,7 +30,9 @@ LN_S=cp
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
+UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-anaconda.sif
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
+PYTHON_IMG=$(BIN_DIR)/python-container.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
 DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
@@ -43,7 +45,9 @@ CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
 
 PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
-CONTAINERS=$(PYTHON_IMG)                         \
+CONTAINERS= \
+           $(BIN_DIR)/ubuntu-anaconda.sif        \
+           $(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
            $(DT_IMG)                             \
