@@ -13,3 +13,6 @@
 [submodule "external-repositories/epics-base"]
 	path = external-repositories/epics-base
 	url = https://github.com/epics-base/epics-base
+[submodule "external-repositories/PyDevice"]
+	path = external-repositories/PyDevice
+	url = https://github.com/hz-b/PyDevice.git

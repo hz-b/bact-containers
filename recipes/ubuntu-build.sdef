@@ -1,6 +1,13 @@
 Bootstrap: docker
 From: ubuntu:22.04
 
+%environment
+   # Make perl complain less
+   # and hopefully also these many local mounts
+   LC_ALL="C"
+   LANG=$LC_ALL
+   export LC_ALL LANG
+
 %post
     export DEBIAN_FRONTEND=noninteractive
 
@@ -21,6 +28,6 @@ From: ubuntu:22.04
   apt-get clean
   ln -s /usr/bin/python3 /usr/bin/python
   ln -s /usr/bin/python3-config /usr/bin/python-config
-  
+
 %runscript
     exec bash "$@"
