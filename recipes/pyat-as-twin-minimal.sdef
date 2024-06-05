@@ -1,0 +1,123 @@
+#
+# Author: Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+#
+# Container containing the core components of the digital twin
+
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    snippets/*.sh /build/snippets/
+    # guessing where wheels will be searched for
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
+    ../external-repositories/lat2db /build/
+
+    # EPICS support
+    ../external-repositories/epics-base/lib/linux-x86_64/ /opt/epics/lib/
+    ../external-repositories/PyDevice/lib/linux-x86_64/ /opt/epics/lib/
+
+    ../external-repositories/dt4acc/ /build/
+    # only copy what is required from dt4acc to dedicated places
+    # build is deleted at end of post
+    ../external-repositories/dt4acc/dbd/ /opt/epics/dt4acc/
+    ../external-repositories/dt4acc/db/  /opt/epics/dt4acc/
+    ../external-repositories/dt4acc/bin/  /opt/epics/dt4acc/
+    ../external-repositories/dt4acc/iocBoot/  /opt/epics/dt4acc/
+
+%environment
+    # start python environment by default
+    . /.singularity_bash
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    cd /build/
+
+    apt-get -q=2 update
+    apt-get -q=2 install -y --no-install-recommends \
+       libpython3.10 \
+       python3.10-minimal \
+       python3.10-venv \
+       python3-pip \
+       libreadline8 \
+       less \
+       bash \
+       git \
+       binutils \
+       make
+
+
+    #  ---------------------------------------------------------
+    # remove what was copied too much
+    find /opt/epics/lib/ -name '*.a' | xargs rm
+    find /opt/epics/lib/ -name '*Client*' | xargs rm
+    # find /opt/epics/lib/ -name 'libCap5*' | xargs rm
+    # find /opt/epics/lib/ -name 'libpvDatabase*' | xargs rm
+    # find /opt/epics/lib/ -name 'libnt*' | xargs rm
+    # strip down files
+    find /opt/epics/lib/ -type f | xargs strip
+    find /opt/epics/dt4acc/bin -type f | xargs strip
+    #  ---------------------------------------------------------
+
+    # add /opt/lib so that it will be used by ldconfig
+    # do not forget to run ldconfig after everything has been
+    # installed
+    opt_conf_path=/etc/ld.so.conf.d/opt.conf
+    echo '# parts built during process go here' >  $opt_conf_path
+    echo '/opt/lib'                             >> $opt_conf_path
+    echo '/opt/epics/lib'                       >> $opt_conf_path
+    echo '#EOF'                                 >> $opt_conf_path
+
+    ldconfig
+
+    #  ---------------------------------------------------------
+    # python virtual environment ... needs to be activated in
+    # environment section
+    python3 -m venv --system-site-packages /opt/venv
+    # activate the environment for the build process
+    echo '. /opt/venv/bin/activate' > /.singularity_bash
+    chmod 555 /.singularity_bash
+
+    . /.singularity_bash
+
+    #  ---------------------------------------------------------
+    # installing python packages using pip
+    pip3 install --upgrade -q pip wheel
+
+    # installing required packages
+    . /build/snippets/bact_package_functions.sh
+
+    echo "adding bact packages"
+    install_python_package_from_github bact-device-models
+    echo "added bact packages"
+
+    pip3 install accelerator-toolbox -q --find-links file:///build/wheels --no-index
+
+    pip3 install lat2db/ dt4acc/src/
+
+
+    # ------------------------------------------------------------
+    # clean up
+    #
+    #
+    cd /
+    rm -r /build/
+    # first pip ... can disapper later on
+    pip3 cache purge
+    rm -rf /.cache
+    rm -rf /root/.cache
+    rm -rf /build/wheels
+
+    dpkg -r make git python3-pip python3-venv binutils
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+
+%runscript
+    # perhaps to be moded to %startscript
+    # currently run in an interactive manner
+    (cd /opt/epics/dt4acc/iocBoot/iocvaccel && ./st.sh)
