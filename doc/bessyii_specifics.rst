@@ -32,7 +32,7 @@ Open new terminal and do:
 
 This will import the data for BESSY II into the database.
 
-2. Start the twin
+3. Start the twin
 
 First setup the environment variable to tell the twin which database to use.
 
