@@ -28,7 +28,7 @@ This will start the mongo container and bind the data directory from the outside
 
 Open new terminal and do:
 
-``mongorestore --port 47017 --db bessyii --collection machines data/to_import/machines.bson``
+``apptainer exec mongo-container.sif mongorestore --port 47017 --db bessyii --collection machines data/to_import/machines.bson``
 
 This will import the data for BESSY II into the database.
 
