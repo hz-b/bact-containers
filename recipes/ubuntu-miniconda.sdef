@@ -1,0 +1,62 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    # at a later stage download it on the fly
+    ../downloads/miniconda.sh /build/downloads/
+
+%environment
+    # Make perl complain less
+    # and hopefully also these many local mounts
+    LC_ALL="C"
+    LANG=$LC_ALL
+    export LC_ALL LANG
+    # conda activate condaenv
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update -q=2
+    apt-get install -q=2 -y --no-install-recommends \
+        build-essential \
+        make \
+    	curl \
+    	bash \
+    	git \
+    	less
+
+    mkdir  /twin
+
+    # install miniconda
+    bash /build/downloads/miniconda.sh -b -u -p /twin/miniconda3/
+    # init for bash
+    CONDA=/twin/miniconda3/bin/conda
+    $CONDA init bash
+
+    $CONDA update -y -q conda
+    $CONDA install -y -q conda-build
+
+    # c compiler if so
+    $CONDA install -q -c conda-forge cxx-compiler
+
+    # later on for building PyDevice
+    ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
+    # conda activate condaenv
+    apt-get clean
+    rm -r /build/
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+PS1='Boa twin \w > '
+export PATH=/twin/miniconda3/bin:$PATH
+EOF
+
+    chmod 755 "$CUSTOM_ENV"
+
+
+%runscript
+    exec bash "$@"
