@@ -34,7 +34,7 @@ UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-anaconda.sif
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
-DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
+DT_IMG=$(BIN_DIR)/pyat-as-twin-miniconda.sif
 DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
 
 epics_DIR=$(SRC_DIR)/epics-base/
@@ -47,15 +47,15 @@ PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 CONTAINERS= \
            $(BIN_DIR)/ubuntu-anaconda.sif        \
+           $(DT_IMG)                             \
            $(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
-           $(DT_IMG)                             \
-           $(DT_IMG_MINIMAL)                     \
-           $(BIN_DIR)/bact-archiver-build.sif    \
-           $(BIN_DIR)/bact-container.sif         \
-           $(BIN_DIR)/mongo-container.sif
+           $(BIN_DIR)/mongo-container.sif        \
+           $(BIN_DIR)/bact-container.sif
 
+#          $(BIN_DIR)/bact-archiver-build.sif    \
+#           $(DT_IMG_MINIMAL)                     \
 
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
@@ -116,7 +116,7 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
-$(DT_IMG) : $(DT4ACC_BUILD_STAMP) $(EPICS7_IMG)
+$(DT_IMG) : $(DT4ACC_BUILD_STAMP) pyat-as-twin-miniconda.sdef # $(EPICS7_IMG)
 
 $(DT_IMG_MINIMAL) : $(DT4ACC_BUILD_STAMP)
 
@@ -162,6 +162,7 @@ $(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_IMG)
 	$(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
         && $(TOUCH) $@
 
+RELEASE_FILES : $(RELEASE_LOCAL) $(CONFIG_SITE_LOCAL)
 
 $(RELEASE_LOCAL) :
 	@echo "Creating $(RELEASE_LOCAL)"
@@ -169,6 +170,8 @@ $(RELEASE_LOCAL) :
 	@echo "HOME_DEVEL=$(SRC_DIR)"                      >> $@
 	@echo "EPICS_BASE=$(epics_DIR)"                    >> $@
 	@echo "PYDEVICE=$(pydevice_DIR)"                   >> $@
+	@echo "USR_C_FLAGS=-fno-strict-overflow -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O3 -ffunction-sections -pipe  -isystem /twin/miniconda3/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/python-split_1708115583107/work=/usr/local/src/conda/python-3.12.2 -fdebug-prefix-map=/twin/miniconda3=/usr/local/src/conda-prefix -fuse-linker-plugin -ffat-lto-objects -flto-partition=none -flto -O3 -Wall" >> $@
+	@echo "USR_CXX_FLAGS=$(USR_C_FLAGS)"               >>$@
 	@echo "#EOF"                                       >> $@
 
 
