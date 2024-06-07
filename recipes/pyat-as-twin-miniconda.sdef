@@ -41,6 +41,10 @@ From: ubuntu:22.04
     LANG=$LC_ALL
     export LC_ALL LANG
 
+    /.singularity.d/env/99-zz_custom_env.sh
+
+    # start python environment by default
+    . /.singularity_bash
 
 %post
     export DEBIAN_FRONTEND=noninteractive
@@ -48,13 +52,13 @@ From: ubuntu:22.04
     cd /build/
 
     apt-get -q=2 update
+    # tzdata ... reducing number of local mounts
     apt-get -q=2 install -y --no-install-recommends \
        ca-certificates \
-       libreadline8 \
-       build-essential \
        less \
        bash \
        git \
+       tzdata \
        binutils
 
     #  ---------------------------------------------------------
@@ -84,9 +88,9 @@ From: ubuntu:22.04
     # init for bash
     conda init bash
     conda update -y -q conda
-    conda install wheel
+    conda install wheel readline
     # c compiler if so
-    # conda install -q  -c conda-forge cxx-compiler
+    conda install -q  -c conda-forge cxx-compiler
 
     # later on for building PyDevice
     ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
@@ -131,10 +135,16 @@ From: ubuntu:22.04
     rm -r /build/
     # first pip ... can disapper later on
     pip3 cache purge
+    conda remove -q -y cxx-compiler
+    conda clean --all -y
+
     rm -rf /.cache
     rm -rf /root/.cache
     rm -rf /build/wheels
 
+    apt-get clean
+    dpkg -r git  binutils
+    apt-get autoremove -y
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
@@ -147,6 +157,9 @@ EOF
 
     chmod 755 "$CUSTOM_ENV"
 
+    echo '# use custom PS1 '                          >> /etc/bash.bashrc
+    echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
+    echo '# end custom PS1 '                          >> /etc/bash.bashrc
 
 %runscript
     # perhaps to be moded to %startscript

@@ -1,7 +1,25 @@
+#------------------------------------------------------------------------------
+# makefile for building containers
+#
+# Authors: Pierre Schnizer <pierre.schnizer@helmholtz-berlin.de>
+#          Waheedullah Sulaiman Khail <waheedullah.sulaiman_khail@helmholtz-berlin.de>
+#
+# The containers are built in the following manner:
+#    1. containers are built, that contain the build environment
+#    2. external prerequistes are built from external repositories.
+#       a. epics-base
+#       b. PyDevice
+#       c. dt4acc
+#    3. containers are built that typically will be used by users
+#
+# NB: this makefile needs GNU make to work
+#------------------------------------------------------------------------------
+
 # needs to be defined by the location of this file
 T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
 
+# a hack ... should load a file if ab
 # for datascc
 ifeq ($(shell hostname), 'datascc')
     ifeq ($(shell id -u -n), 'schnizer')
@@ -30,13 +48,26 @@ LN_S=cp
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
-UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-anaconda.sif
+
+# soley built to be able to build the other containers, but uses
+# miniconda build environment
+UBUNTU_BUILD_MINICONDA_IMG=$(BIN_DIR)/ubuntu-miniconda.sif
+
+# a intermediate container: contains EPICS. Development will
+# typically not impact EPICS. Thus final container build times are
+# reduced given that these are stacked on this container
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
+
+# a container with python inside: used for pre download of wheels
+# or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
-PYTHON_IMG=$(BIN_DIR)/python-container.sif
+
+# Finally: the digital twin containers
+# See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin-miniconda.sif
 DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
 
+# directories of external
 epics_DIR=$(SRC_DIR)/epics-base/
 pydevice_DIR=$(SRC_DIR)/PyDevice/
 dt4acc_DIR=$(SRC_DIR)/dt4acc/
@@ -45,11 +76,10 @@ CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
 
 PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
-CONTAINERS= \
-           $(BIN_DIR)/ubuntu-anaconda.sif        \
+CONTAINERS=$(PYTHON_IMG)                         \
            $(DT_IMG)                             \
-           $(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
+	   $(UBUNTU_BUILD_MINICONDA_IMG)         \
            $(EPICS7_IMG)                         \
            $(BIN_DIR)/mongo-container.sif        \
            $(BIN_DIR)/bact-container.sif
@@ -68,7 +98,8 @@ STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
        $(BACT2_BESSYII_WHEEL_STAMP) \
        $(EPICS_BUILD_STAMP)         \
-       $(PYDEVICE_BUILD_STAMP)
+       $(PYDEVICE_BUILD_STAMP)      \
+       $(DT4ACC_BUILD_STAMP)
 
 # Some dedicated entry points
 
@@ -116,22 +147,22 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
-$(DT_IMG) : $(DT4ACC_BUILD_STAMP) pyat-as-twin-miniconda.sdef # $(EPICS7_IMG)
+$(DT_IMG) : twin_prerequisites $(UBUNTU_BUILD_MINICONDA_IMG)
 
-$(DT_IMG_MINIMAL) : $(DT4ACC_BUILD_STAMP)
+$(DT_IMG_MINIMAL) : twin_prerequisites $(UBUNTU_BUILD_IMG)
+
+twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
 $(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
 
 
-$(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
-                                       bact-archiver-build.sdef \
-                                       $(UBUNTU_BUILD_IMG)      \
+# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
+#                                       bact-archiver-build.sdef \
+#                                       $(UBUNTU_BUILD_IMG)      \
 
 
 $(BIN_DIR)/bact-container.sif : bact-container.sdef               \
                                   $(BIN_DIR)/python-container.sif \
-                                  $(BACT_ARCHIVER_WHEEL_STAMP)    \
-                                  $(BACT2_BESSYII_WHEEL_STAMP)    \
                                   $(PIP_WHEEL_STAMP)
 
 # ------------------------------------------------------------------------------
@@ -145,21 +176,21 @@ $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
        )
 
 # ------------------------------------------------------------
-# build epics
+# build epics and the components dependent on it
 
 $(DT4ACC_BUILD_STAMP) : $(PYDEVICE_BUILD_STAMP) $(CONFIG_SITE_LOCAL)
-	$(UBUNTU_BUILD_IMG) -c "make -C $(dt4acc_DIR) -j $(N_JOBS)" \
+	$(UBUNTU_BUILD_MINICONDA_IMG) -c "make -C $(dt4acc_DIR) -j $(N_JOBS)" \
          && $(TOUCH) $@
 
-$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(PYDEV_RELEASE_LOCAL)
-	$(UBUNTU_BUILD_IMG) -c "make -C $(pydevice_DIR) -j $(N_JOBS)" \
+$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(PYDEV_RELEASE_LOCAL)
+	$(UBUNTU_BUILD_MINICONDA_IMG) -c "make -C $(pydevice_DIR) -j $(N_JOBS)" \
          && $(TOUCH) $@
 
 $(PYDEV_RELEASE_LOCAL) : $(RELEASE_LOCAL)
 	$(LN_S) $^ $@
 
-$(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_IMG)
-	$(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
+$(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_MINICONDA_IMG)
+	$(UBUNTU_BUILD_MINICONDA_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
         && $(TOUCH) $@
 
 RELEASE_FILES : $(RELEASE_LOCAL) $(CONFIG_SITE_LOCAL)
@@ -170,8 +201,6 @@ $(RELEASE_LOCAL) :
 	@echo "HOME_DEVEL=$(SRC_DIR)"                      >> $@
 	@echo "EPICS_BASE=$(epics_DIR)"                    >> $@
 	@echo "PYDEVICE=$(pydevice_DIR)"                   >> $@
-	@echo "USR_C_FLAGS=-fno-strict-overflow -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O3 -ffunction-sections -pipe  -isystem /twin/miniconda3/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/python-split_1708115583107/work=/usr/local/src/conda/python-3.12.2 -fdebug-prefix-map=/twin/miniconda3=/usr/local/src/conda-prefix -fuse-linker-plugin -ffat-lto-objects -flto-partition=none -flto -O3 -Wall" >> $@
-	@echo "USR_CXX_FLAGS=$(USR_C_FLAGS)"               >>$@
 	@echo "#EOF"                                       >> $@
 
 
@@ -188,17 +217,17 @@ $(CONFIG_SITE_LOCAL) :
 BACT_ARCHIVER_DIR=$(SRC_DIR)/bact-archiver/
 BACT_ARCHIVER_BUILD_IMG=$(BIN_DIR)/bact-archiver-build.sif
 
-$(BACT_ARCHIVER_WHEEL_STAMP) : $(BACT_ARCHIVER_BUILD_IMG)
+$(BACT_ARCHIVER_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
 	( echo $(T_DIR_ABS);                                               \
           cd $(BACT_ARCHIVER_DIR)                                          \
-          && $(BACT_ARCHIVER_BUILD_IMG) setup.py build_proto_c bdist_wheel -d $(WHEELS_DIR) \
+          && $(UBUNTU_BUILD_IMG) -c "python3 setup.py build_proto_c bdist_wheel -d $(WHEELS_DIR)" \
         ) && $(TOUCH) $@
 
 
 # bact2-bessyii to avoid entering the password
 BACT2_BESSYII_DIR=$(SRC_DIR)/bact2_bessyii/
 
-$(BACT2_BESSYII_WHEEL_STAMP) : $(BACT_ARCHIVER_BUILD_IMG)
+$(BACT2_BESSYII_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
 	( echo $(T_DIR_ABS);                                                  \
           cd $(BACT2_BESSYII_DIR)                                             \
           && $(BACT_ARCHIVER_BUILD_IMG) setup.py bdist_wheel -d $(WHEELS_DIR) \

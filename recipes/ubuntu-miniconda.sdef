@@ -17,8 +17,11 @@ From: ubuntu:22.04
     export DEBIAN_FRONTEND=noninteractive
 
     apt-get update -q=2
+    # deliberatly not using build-essential as it adds compilers
+    # following builds should use the ones from miniconda
     apt-get install -q=2 -y --no-install-recommends \
-        build-essential \
+        libc-dev \
+	dpkg-dev \
         make \
     	curl \
     	bash \
@@ -34,9 +37,9 @@ From: ubuntu:22.04
     $CONDA init bash
 
     $CONDA update -y -q conda
-    $CONDA install -y -q conda-build
+    $CONDA install -y -q conda-build readline numpy protobuf setuptools
 
-    # c compiler if so
+    # c/c++ compiler
     $CONDA install -q -c conda-forge cxx-compiler
 
     # later on for building PyDevice
