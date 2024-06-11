@@ -82,6 +82,7 @@ CONTAINERS=$(PYTHON_IMG)                         \
 	   $(UBUNTU_BUILD_MINICONDA_IMG)         \
            $(EPICS7_IMG)                         \
            $(BIN_DIR)/mongo-container.sif        \
+           $(BIN_DIR)/bact-miniconda-container.sif \
            $(BIN_DIR)/bact-container.sif
 
 #          $(BIN_DIR)/bact-archiver-build.sif    \
