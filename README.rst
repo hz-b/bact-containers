@@ -47,9 +47,17 @@ your machine will provide. it will use all of them. (Therfore I
 suggest to use nice, so that your interactive work is not
 impacted too much).
 
-Running some examles
---------------------
+Running some examples
+---------------------
 
 have a look into the `doc`_ directory. Instructions are provided there.
 
 .. _`doc` : doc
+
+
+BESSY II specifics for container
+--------------------------------
+
+Have a look to `BESSYII_specifics`_
+
+.. _`BESSYII_specifics` : doc/bessyii_specifics.rst
