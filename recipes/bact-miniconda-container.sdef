@@ -19,20 +19,28 @@ From: ../bin/python-container.sif
 %files
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
+            ../downloads/miniconda.sh /build/downloads/
+
     snippets/*.sh /build/snippets/
 
 
 %environment
-    . /.singularity_bash
+    /.singularity.d/env/99-zz_custom_env.sh
 
 
 %post
     # ------------------------------------------------------------------------------
     # defining directories
-    export TOP_DIR=`pwd`
-    mkdir -p build
-    cd build
-    export BUILD_DIR=`pwd`
+
+    apt-get -q=2 update
+    # tzdata ... reducing number of local mounts
+    apt-get -q=2 install -y --no-install-recommends \
+       ca-certificates \
+       less \
+       bash \
+       git \
+       tzdata \
+       binutils
 
     # Where to put apps to
     APPS_DIR=/twin/apps/
@@ -40,16 +48,30 @@ From: ../bin/python-container.sif
     mkdir -p "$APPS_DIR"
     mkdir -p "$CODE_DIR"
 
-    # unhandy to call in
-    python3 -m venv --system-site-packages "$APPS_DIR"/venv
+    #  ---------------------------------------------------------
+    # conda setup
+    bash /build/downloads/miniconda.sh -b -u -p /twin/miniconda3/
+    export PATH=/twin/miniconda3/bin:$PATH
 
-    # activate the environment for the build process
-    echo ". $APPS_DIR/venv/bin/activate" > /.singularity_bash
-    chmod 555 /.singularity_bash
+    # init for bash
+    conda init bash
+    conda update -y -q conda
+    conda install wheel readline
+    # c compiler if so
+    conda install -q  -c conda-forge cxx-compiler
 
-    . /.singularity_bash
+    # later on for building PyDevice
+    ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
 
+    #  ---------------------------------------------------------
+
+    # installing conda packages required further down the line
+    conda install -q wheel pymongo numpy scipy typing pandas matplotlib \
+                      xarray h5netcdf
+
+    conda install -q -c conda-forge pyvista ophyd bluesky databroker
     # ------------------------------------------------------------------------------
+    #		     PyQt5 PySide2 fastapi uvicorn
     # packages required for python packages
     apt-get install -y --no-install-recommends \
 	libprotobuf23
@@ -63,32 +85,19 @@ From: ../bin/python-container.sif
     echo pip3 cache
     # pip3 cache list
     echo '----------------------------------------------------------------------'
-    pip3 install bact-archiver -q --find-links file:///build/wheels --no-index
-    pip3 install pyepics -q --find-links file:///build/wheels  --no-index
-
     # install dedicated python packages
     cd "$CODE_DIR"
     /bin/bash /build/snippets/bact_packages.sh
 
-    git clone https://github.com/hz-b/bact-archiver-bessyii.git
-    cd bact-archiver-bessyii
-    if [ -e requirements.txt ] ; then
-          pip3 install -r requirements.txt -q  --find-links file:///build/wheels  --no-index
-    fi
-    python3 setup.py install
-    cd ..
-
-
     CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
     # avoid that file metadata persist
-    cat /build/snippets/bact_container_custom_env.sh > "$CUSTOM_ENV"
+    cat /build/snippets/bact_miniconda_container_custom_env.sh > "$CUSTOM_ENV"
     chmod 755 "$CUSTOM_ENV"
 
     # to be moved to requirements ---------------------------------------
     # scipy: bact-math-utils
     # h5netcdf: bact-analysis-bessyii
-    # fastapi, uvicorn: bessyii-dashboard
-    pip3 install h5netcdf scipy fastapi uvicorn matplotlib  --find-links file:///build/wheels  --no-index
+    # : bessyii-dashboard
 
     # cleaning up  ------------------------------------------------------
     cd $TOP_DIR
@@ -97,8 +106,10 @@ From: ../bin/python-container.sif
     pip3 cache list
     echo '----------------------------------------------------------------------'
     pip3 cache purge
-    # remove build directory
-    rm -r build
+
+    conda remove -q -y cxx-compiler
+    conda clean --all -y
+
     apt-get clean
     rm -rf /.cache
     rm -rf /root/.cache
