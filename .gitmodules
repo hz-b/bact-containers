@@ -16,3 +16,6 @@
 [submodule "external-repositories/PyDevice"]
 	path = external-repositories/PyDevice
 	url = https://github.com/hz-b/PyDevice.git
+[submodule "external-repositories/p4p"]
+	path = external-repositories/p4p
+	url = https:/github.com/epics-base/p4p/
