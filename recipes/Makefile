@@ -21,8 +21,8 @@ T_DIR=$(T_DIR_ABS)
 
 # a hack ... should load a file if ab
 # for datascc
-ifeq ($(shell hostname), 'datascc')
-    ifeq ($(shell id -u -n), 'schnizer')
+ifeq ($(shell hostname), datascc)
+    ifeq ($(shell id -u -n), schnizer)
         T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
     endif
 endif
