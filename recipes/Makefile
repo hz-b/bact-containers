@@ -30,6 +30,7 @@ endif
 SRC_DIR=$(T_DIR)/external-repositories/
 # containers will be put here
 BIN_DIR=$(T_DIR)/bin/
+DOWNLOAD_DIR=$(T_DIR)/downloads/
 # python wheels are cached here
 WHEELS_DIR=$(T_DIR)/wheels
 LOCAL_DIR=$(T_DIR)/local
@@ -42,9 +43,13 @@ N_JOBS=$(shell nproc)
 APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP_MODULE=pip
+CURL=curl
 
 # does not always work with link
 LN_S=cp
+
+
+MINICONDA_INSTALLER=$(DOWNLOAD_DIR)/miniconda.sh
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
@@ -52,7 +57,6 @@ UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 # soley built to be able to build the other containers, but uses
 # miniconda build environment
 UBUNTU_BUILD_MINICONDA_IMG=$(BIN_DIR)/ubuntu-miniconda.sif
-
 # a intermediate container: contains EPICS. Development will
 # typically not impact EPICS. Thus final container build times are
 # reduced given that these are stacked on this container
@@ -65,6 +69,7 @@ PYTHON_IMG=$(BIN_DIR)/python-container.sif
 # Finally: the digital twin containers
 # See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin-miniconda.sif
+DT_P4P_IMG=$(BIN_DIR)/pyat-as-twin-p4p-miniconda.sif
 DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
 
 # directories of external
@@ -78,18 +83,20 @@ PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 CONTAINERS=$(PYTHON_IMG)                         \
            $(DT_IMG)                             \
+           $(DT_P4P_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
 	   $(UBUNTU_BUILD_MINICONDA_IMG)         \
            $(EPICS7_IMG)                         \
            $(BIN_DIR)/mongo-container.sif        \
            $(BIN_DIR)/bact-miniconda-container.sif \
-           $(BIN_DIR)/bact-container.sif
+           $(BIN_DIR)/bact-miniconda-container.sif
 
 #          $(BIN_DIR)/bact-archiver-build.sif    \
 #           $(DT_IMG_MINIMAL)                     \
 
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
+MINICONDA_INSTALLER_STAMP=$(BUILD_DIR)/miniconda-installer.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
@@ -97,6 +104,7 @@ DT4ACC_BUILD_STAMP=$(BUILD_DIR)/dt4acc-built.stamp
 
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
+       $(MINICONDA_INSTALLER_STAMP) \
        $(BACT2_BESSYII_WHEEL_STAMP) \
        $(EPICS_BUILD_STAMP)         \
        $(PYDEVICE_BUILD_STAMP)      \
@@ -148,9 +156,11 @@ $(BIN_DIR)/%.sif : %.sdef
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
 
-$(DT_IMG) : twin_prerequisites $(UBUNTU_BUILD_MINICONDA_IMG)
+$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(EPICS_BUILD_STAMP)
 
-$(DT_IMG_MINIMAL) : twin_prerequisites $(UBUNTU_BUILD_IMG)
+$(DT_P4P_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG)
+
+$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
 
 twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
@@ -162,10 +172,11 @@ $(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sde
 #                                       $(UBUNTU_BUILD_IMG)      \
 
 
-$(BIN_DIR)/bact-container.sif : bact-container.sdef               \
-                                  $(BIN_DIR)/python-container.sif \
-                                  $(PIP_WHEEL_STAMP)
+$(BIN_DIR)/bact-miniconda-container.sif : bact-miniconda-container.sdef \
+                                          $(BIN_DIR)/python-container.sif \
+                                          $(PIP_WHEEL_STAMP)
 
+$(UBUNTU_BUILD_MINICONDA_IMG) : $(MINICONDA_INSTALLER_STAMP)
 # ------------------------------------------------------------------------------
 # download wheels
 
@@ -176,6 +187,10 @@ $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
               && $(TOUCH) $@ \
        )
 
+
+$(MINICONDA_INSTALLER_STAMP) :
+	$(CURL) https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o $(MINICONDA_INSTALLER)
+	$(TOUCH) $@
 # ------------------------------------------------------------
 # build epics and the components dependent on it
 

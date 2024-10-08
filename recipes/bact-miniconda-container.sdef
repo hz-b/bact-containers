@@ -55,10 +55,11 @@ From: ../bin/python-container.sif
 
     # init for bash
     conda init bash
+    conda config --append channels conda-forge
     conda update -y -q conda
     conda install wheel readline
     # c compiler if so
-    conda install -q  -c conda-forge cxx-compiler
+    conda install cxx-compiler
 
     # later on for building PyDevice
     ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
@@ -69,7 +70,7 @@ From: ../bin/python-container.sif
     conda install -q wheel pymongo numpy scipy typing pandas matplotlib \
                       xarray h5netcdf
 
-    conda install -q -c conda-forge pyvista ophyd bluesky databroker
+    conda install -q  pyvista ophyd bluesky databroker
     # ------------------------------------------------------------------------------
     #		     PyQt5 PySide2 fastapi uvicorn
     # packages required for python packages
@@ -114,6 +115,7 @@ From: ../bin/python-container.sif
     rm -rf /.cache
     rm -rf /root/.cache
     rm -rf /build/wheels
+    rm -rf /build/downloads
 
     apt-get autoremove -y
     apt-get clean

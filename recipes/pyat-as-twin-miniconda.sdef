@@ -112,8 +112,9 @@ From: ubuntu:22.04
     cd /build/
 
     # install required packages as much as possible from conda
-    conda install -q wheel fastapi pymongo pydantic typing attrs \
-                 uvicorn httpx  numpy scipy
+    conda install -q  --channel=conda-forge --solver=classic \
+                 wheel fastapi pymongo pydantic typing attrs \
+                 uvicorn httpx numpy scipy \
     # install what is missing
     python3 -m pip install lark jsons uuid datetime
 
@@ -135,7 +136,7 @@ From: ubuntu:22.04
     rm -r /build/
     # first pip ... can disapper later on
     pip3 cache purge
-    conda remove -q -y cxx-compiler
+    # conda remove -q -y --solver=classic cxx-compiler
     conda clean --all -y
 
     rm -rf /.cache
