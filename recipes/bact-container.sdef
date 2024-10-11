@@ -19,8 +19,6 @@ From: ../bin/python-container.sif
 %files
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
-            ../downloads/miniconda.sh /build/downloads/
-
     snippets/*.sh /build/snippets/
 
 
@@ -49,20 +47,8 @@ From: ../bin/python-container.sif
     mkdir -p "$CODE_DIR"
 
     #  ---------------------------------------------------------
-    # conda setup
-    bash /build/downloads/miniconda.sh -b -u -p /twin/miniconda3/
-    export PATH=/twin/miniconda3/bin:$PATH
-
-    # init for bash
-    conda init bash
-    conda config --append channels conda-forge
-    conda update -y -q conda
-    conda install wheel readline
-    # c compiler if so
-    conda install cxx-compiler
-
     # later on for building PyDevice
-    ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
+    # ln -s /twin/bin/python3-config /bin/python-config
 
     #  ---------------------------------------------------------
 

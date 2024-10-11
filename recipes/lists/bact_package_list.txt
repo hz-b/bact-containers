@@ -1,11 +1,28 @@
+# core numeric packages
 numpy<2.0
-p4p
 scipy
 pandas
+# cython required by numpy ?
+Cython
 
+# handling json database etc
+fastapi
 pymongo
+typing
+attrs
 jsons
+fastapi
+uvicorn
+starlette
+httpx
 
+# parsing files
+lark
+
+# why this one
+datetime
+#
+uuid
 ophyd>=1.6
 # acces to the database
 pyepics
@@ -24,9 +41,6 @@ PyQt5
 PySide2
 tqdm
 
-fastapi
-uvicorn
-starlette
 
 # as backend for the kick file backuped by xarray
 # to be removed as soon as the kick approximation
@@ -48,3 +62,13 @@ setuptools-scm
 
 poetry
 poetry-core>=1.0.0
+
+# for dt4acc import
+openpyxl
+# now wheel for this one
+softIoc
+p4p
+
+# lat2db requires pytest
+# need to make it a development requirement
+pytest

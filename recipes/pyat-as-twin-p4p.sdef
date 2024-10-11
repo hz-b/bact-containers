@@ -9,8 +9,6 @@ Bootstrap: docker
 From: ubuntu:22.04
 
 %files
-    ../downloads/miniconda.sh /build/downloads/
-
     snippets/*.sh /build/snippets/
     # guessing where wheels will be searched for
     ../wheels/*.whl /build/wheels/
@@ -54,6 +52,9 @@ From: ubuntu:22.04
        bash \
        git \
        tzdata \
+       python3-pip \
+       python3-venv \
+       python3-minimal \
        binutils
 
     #  ---------------------------------------------------------
@@ -65,20 +66,6 @@ From: ubuntu:22.04
     find /twin/epics/bin -name 'S99*' | xargs rm
     find /twin/epics/bin -type f -a  ! -name '*.service' | xargs strip
     find /twin/epics/lib -type f | xargs strip
-    #  ---------------------------------------------------------
-    # conda setup
-    bash /build/downloads/miniconda.sh -b -u -p /twin/miniconda3/
-    export PATH=/twin/miniconda3/bin:$PATH
-
-    # init for bash
-    conda init bash
-    conda config --add channels defaults
-    conda update -y -q conda
-    conda install wheel readline
-    conda install -q  -c conda-forge cxx-compiler
-
-    # later on for building PyDevice
-    ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
 
     #  ---------------------------------------------------------
     # add /twin/lib so that it will be used by ldconfig
@@ -97,14 +84,13 @@ From: ubuntu:22.04
     # installing python packages using conda and pip
     cd /build/
 
-    # install required packages as much as possible from conda
-    conda install --solver=classic -q wheel fastapi pymongo pydantic typing attrs \
-                 uvicorn httpx  numpy scipy
-    # p4p seems to be outdated
-    # conda install --solver=classic -q  -c conda-forge p4p
+    python3 -m pip install --upgrade pip wheel
 
     # install what is missing
-    python3 -m pip install lark jsons uuid datetime
+    python3 -m pip install fastapi pymongo pydantic typing attrs \
+                 uvicorn httpx numpy scipy lark jsons uuid datetime    \
+		 accelerator-toolbox \
+		 -q --find-links file:///build/wheels --no-index
 
     # installing required packages
     . /build/snippets/bact_package_functions.sh
@@ -113,20 +99,19 @@ From: ubuntu:22.04
     install_python_package_from_github bact-device-models
     echo "added bact packages"
 
-    python3 -m pip install accelerator-toolbox
-    python3 -m pip install lat2db/ p4p/ dt4acc/src/
+    # do I need to build p4p myself ?    
+    python3 -m pip install lat2db/ p4p/ dt4acc/src/ -q --find-links file:///build/wheels --no-index
 
     # ------------------------------------------------------------
     # clean up
     #
     #
     cd /
+    pip3 cache list
     rm -r /build/
     # first pip ... can disapper later on
     pip3 cache purge
     # Tracking down a bug
-    conda remove  --solver=classic -q -y cxx-compiler
-    conda clean --all -y
 
     rm -rf /.cache
     rm -rf /root/.cache
@@ -142,12 +127,12 @@ From: ubuntu:22.04
     cat >$CUSTOM_ENV <<EOF
 #!/bin/bash
 PS1='SoftIoc Twin \w > '
-export PATH=/twin/epics/bin:/twin/miniconda3/bin:/bin:/usr/bin/:/usr/local/bin/
+export PATH=/twin/epics/bin/:/bin:/usr/bin/:/usr/local/bin/
 EOF
 
     CUSTOM_BASH='/.singularity_bash'
 cat >$CUSTOM_BASH<<EOF
-export PATH=/twin/epics/bin:/twin/miniconda3/bin:/bin:/usr/bin/:/usr/local/bin/
+export PATH=/twin/epics/bin:/usr/bin/:/usr/local/bin/
 EOF
 
     chmod 755 "$CUSTOM_ENV"
