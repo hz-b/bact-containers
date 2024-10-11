@@ -17,9 +17,9 @@ From: ../bin/python-container.sif
 
 # copy local built wheels into the images
 %files
+    snippets/*.sh /build/snippets/
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
-    snippets/*.sh /build/snippets/
 
 
 %environment
@@ -28,27 +28,18 @@ From: ../bin/python-container.sif
 
 %post
     # ------------------------------------------------------------------------------
-    # defining directories
 
     apt-get -q=2 update
     # tzdata ... reducing number of local mounts
     apt-get -q=2 install -y --no-install-recommends \
-       ca-certificates \
-       less \
-       bash \
        git \
-       tzdata \
-       binutils
 
+    # defining directories
     # Where to put apps to
     APPS_DIR=/twin/apps/
     CODE_DIR=/twin/code/
     mkdir -p "$APPS_DIR"
     mkdir -p "$CODE_DIR"
-
-    #  ---------------------------------------------------------
-    # later on for building PyDevice
-    # ln -s /twin/bin/python3-config /bin/python-config
 
     #  ---------------------------------------------------------
 
@@ -82,7 +73,7 @@ From: ../bin/python-container.sif
 
     CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
     # avoid that file metadata persist
-    cat /build/snippets/bact_miniconda_container_custom_env.sh > "$CUSTOM_ENV"
+    cat /build/snippets/bact_container_custom_env.sh > "$CUSTOM_ENV"
     chmod 755 "$CUSTOM_ENV"
 
     # to be moved to requirements ---------------------------------------
@@ -122,6 +113,8 @@ EOF
     pip3 cache purge
     # left over files
     find /twin/code -name '__pycache__' -delete
+    apt-get purge -y git
+    apt-get autoremove -y
     apt-get clean
     rm -rf /.cache
     rm -rf /root/.cache

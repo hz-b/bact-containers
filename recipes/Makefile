@@ -90,7 +90,9 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(BIN_DIR)/mongo-container.sif
 
 # former twin based on PyDevice
-# please notice: the path dt4cc must then match too
+# please notice: the branch of dt4cc must then match
+# too
+# see external_repositories
 #           $(DT_IMG_MINIMAL)                     \
 
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp

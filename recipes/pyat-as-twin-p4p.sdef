@@ -9,25 +9,27 @@ From: ubuntu:22.04
 
 %files
     snippets/*.sh /build/snippets/
-    # guessing where wheels will be searched for
+    ../external-repositories/lat2db /build/
+    ../external-repositories/dt4acc /build/
+    ../external-repositories/p4p /build/
+
+    # predownloaded wheels
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
-    ../external-repositories/lat2db /build/
-    ../external-repositories/p4p /build/
 
     # EPICS support
     ../external-repositories/epics-base/dbd/* /twin/epics/dbd/
     ../external-repositories/epics-base/lib/linux-x86_64/* /twin/epics/lib/
     ../external-repositories/epics-base/bin/linux-x86_64/* /twin/epics/bin/
 
-    ../external-repositories/dt4acc/ /build/
 
 
 %environment
     # Make perl complain less
     # and hopefully also these many local mounts
-    LC_ALL="C"
-    LANG=$LC_ALL
+    LANG=en_US.UTF-8
+    LC_ALL=$LANG
+    # LANG=$LC_ALL
     export LC_ALL LANG
 
     /.singularity.d/env/99-zz_custom_env.sh
@@ -47,6 +49,7 @@ From: ubuntu:22.04
        gcc \
        g++ \
        ca-certificates \
+       locales \
        less \
        bash \
        git \
@@ -58,14 +61,17 @@ From: ubuntu:22.04
        binutils
 
     #  ---------------------------------------------------------
+    # thx to Elena Sacci ...
+    sed -i "s/# en_US.UTF-8/en_US.UTF-8/" /etc/locale.gen && locale-gen
+    #  ---------------------------------------------------------
 
-    # remove what was copied too much
-    find /twin/epics/lib/ -name '*.a' | xargs rm
-    find /twin/epics/bin -name '*.pl' | xargs rm
-    find /twin/epics/bin -name '*.py' | xargs rm
-    find /twin/epics/bin -name 'S99*' | xargs rm
-    find /twin/epics/bin -type f -a  ! -name '*.service' | xargs strip
-    find /twin/epics/lib -type f | xargs strip
+    # # remove what was copied too much
+    # find /twin/epics/lib/ -name '*.a' | xargs rm
+    # find /twin/epics/bin -name '*.pl' | xargs rm
+    # find /twin/epics/bin -name '*.py' | xargs rm
+    # find /twin/epics/bin -name 'S99*' | xargs rm
+    # find /twin/epics/bin -type f -a  ! -name '*.service' | xargs strip
+    # find /twin/epics/lib -type f | xargs strip
 
     #  ---------------------------------------------------------
     # add /twin/lib so that it will be used by ldconfig
@@ -115,11 +121,7 @@ From: ubuntu:22.04
     pip3 cache list
     # first pip ... can disapper later on
     pip3 cache purge
-    # Tracking down a bug
-
-
-    # apt-get purge -y g++-11 g++ gcc-11 gcc binutils
-    # apt-get purge -y binutils
+    apt-get purge -y python3-dev g++ gcc binutils git
     apt-get clean
     apt-get autoremove -y
     apt-get clean
