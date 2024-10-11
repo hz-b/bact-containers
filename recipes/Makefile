@@ -19,6 +19,7 @@
 T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
 
+# a hack ... should load a file if ab
 # for datascc
 ifeq ($(shell hostname), datascc)
     ifeq ($(shell id -u -n), schnizer)
@@ -29,6 +30,7 @@ endif
 SRC_DIR=$(T_DIR)/external-repositories/
 # containers will be put here
 BIN_DIR=$(T_DIR)/bin/
+DOWNLOAD_DIR=$(T_DIR)/downloads/
 # python wheels are cached here
 WHEELS_DIR=$(T_DIR)/wheels
 LOCAL_DIR=$(T_DIR)/local
@@ -44,7 +46,13 @@ LN_S=cp
 APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP_MODULE=pip
-CMAKE=cmake
+CURL=curl
+
+# does not always work with link
+LN_S=cp
+
+
+MINICONDA_INSTALLER=$(DOWNLOAD_DIR)/miniconda.sh
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
@@ -52,6 +60,7 @@ UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 # typically not impact EPICS. Thus final container build times are
 # reduced given that these are stacked on this container
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
+
 # a container with python inside: used for pre download of wheels
 # or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
@@ -83,9 +92,9 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(BIN_DIR)/bact-container.sif         \
            $(BIN_DIR)/mongo-container.sif
 
-
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
+MINICONDA_INSTALLER_STAMP=$(BUILD_DIR)/miniconda-installer.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
@@ -152,17 +161,27 @@ $(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sde
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
 $(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP)
 
-$(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
-                                       bact-archiver-build.sdef \
-                                       $(UBUNTU_BUILD_IMG)      \
+$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(EPICS_BUILD_STAMP)
+
+$(DT_P4P_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG)
+
+$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
+
+twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
+
+$(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
 
 
-$(BIN_DIR)/bact-container.sif : bact-container.sdef               \
-                                  $(BIN_DIR)/python-container.sif \
-                                  $(BACT_ARCHIVER_WHEEL_STAMP)    \
-                                  $(BACT2_BESSYII_WHEEL_STAMP)    \
-                                  $(PIP_WHEEL_STAMP)
+# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
+#                                       bact-archiver-build.sdef \
+#                                       $(UBUNTU_BUILD_IMG)      \
 
+
+$(BIN_DIR)/bact-miniconda-container.sif : bact-miniconda-container.sdef \
+                                          $(BIN_DIR)/python-container.sif \
+                                          $(PIP_WHEEL_STAMP)
+
+$(UBUNTU_BUILD_MINICONDA_IMG) : $(MINICONDA_INSTALLER_STAMP)
 # ------------------------------------------------------------------------------
 # download wheels
 
@@ -196,9 +215,9 @@ RELEASE_FILES : $(RELEASE_LOCAL) $(CONFIG_SITE_LOCAL)
 $(RELEASE_LOCAL) :
 	@echo "Creating $(RELEASE_LOCAL)"
 	@echo "# Release.local ... reflecting local build" >  $@
-	@echo "HOME_DEVEL=$(SRC_DIR)"			  >> $@
-	@echo "EPICS_BASE=$(epics_DIR)"			  >> $@
-	@echo "PYDEVICE=$(pydevice_DIR)"			  >> $@
+	@echo "HOME_DEVEL=$(SRC_DIR)"                      >> $@
+	@echo "EPICS_BASE=$(epics_DIR)"                    >> $@
+	@echo "PYDEVICE=$(pydevice_DIR)"                   >> $@
 	@echo "#EOF"                                       >> $@
 
 
@@ -215,17 +234,17 @@ $(CONFIG_SITE_LOCAL) :
 BACT_ARCHIVER_DIR=$(SRC_DIR)/bact-archiver/
 BACT_ARCHIVER_BUILD_IMG=$(BIN_DIR)/bact-archiver-build.sif
 
-$(BACT_ARCHIVER_WHEEL_STAMP) : $(BACT_ARCHIVER_BUILD_IMG)
+$(BACT_ARCHIVER_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
 	( echo $(T_DIR_ABS);                                               \
           cd $(BACT_ARCHIVER_DIR)                                          \
-          && $(BACT_ARCHIVER_BUILD_IMG) setup.py build_proto_c bdist_wheel -d $(WHEELS_DIR) \
+          && $(UBUNTU_BUILD_IMG) -c "python3 setup.py build_proto_c bdist_wheel -d $(WHEELS_DIR)" \
         ) && $(TOUCH) $@
 
 
 # bact2-bessyii to avoid entering the password
 BACT2_BESSYII_DIR=$(SRC_DIR)/bact2_bessyii/
 
-$(BACT2_BESSYII_WHEEL_STAMP) : $(BACT_ARCHIVER_BUILD_IMG)
+$(BACT2_BESSYII_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
 	( echo $(T_DIR_ABS);                                                  \
           cd $(BACT2_BESSYII_DIR)                                             \
           && $(BACT_ARCHIVER_BUILD_IMG) setup.py bdist_wheel -d $(WHEELS_DIR) \

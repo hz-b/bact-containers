@@ -10,3 +10,14 @@
 [submodule "external-repositories/lat2db"]
 	path = external-repositories/lat2db
 	url = https://github.com/hz-b/lat2db.git
+[submodule "external-repositories/epics-base"]
+	path = external-repositories/epics-base
+	url = https://github.com/epics-base/epics-base
+[submodule "external-repositories/PyDevice"]
+	path = external-repositories/PyDevice
+	url = https://github.com/hz-b/PyDevice.git
+[submodule "external-repositories/p4p"]
+	path = external-repositories/p4p
+	url = https://github.com/epics-base/p4p/
+[submodule "external-repositories/PyDevice/"]
+	url = https://github.com/klemenv/PyDevice.git

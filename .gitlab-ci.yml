@@ -1,0 +1,21 @@
+# Towards building containers automatically
+# See https://docs.gitlab.com/ee/ci/yaml/index.html for all available options
+
+# you can delete this line if you're not using Docker
+
+
+build-singularity:
+  image:
+    name: quay.io/singularity/singularity:v3.7.0
+    entrypoint: [""]
+  stage: deploy
+  script:
+    - build bin/python-container.sif recipes/python-container.sdef
+  only:
+    changes:
+      - recipes/python-container.sdef
+  artifacts:
+    paths:
+      - bin/python-container.sif
+    expire_in: 10 min
+  interruptible: true

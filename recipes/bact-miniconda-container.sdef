@@ -1,0 +1,126 @@
+#
+# Author:
+#         Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+# Container containing python bact modules
+#
+# seems I need venv
+# * qt needs binding mounts (can I include them here ?)
+# * but live table stops to work if pip does not install
+#   in venv ...
+# * using %environment to switch it on by default
+#
+Bootstrap: localimage
+From: ../bin/python-container.sif
+
+
+# copy local built wheels into the images
+%files
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
+            ../downloads/miniconda.sh /build/downloads/
+
+    snippets/*.sh /build/snippets/
+
+
+%environment
+    /.singularity.d/env/99-zz_custom_env.sh
+
+
+%post
+    # ------------------------------------------------------------------------------
+    # defining directories
+
+    apt-get -q=2 update
+    # tzdata ... reducing number of local mounts
+    apt-get -q=2 install -y --no-install-recommends \
+       ca-certificates \
+       less \
+       bash \
+       git \
+       tzdata \
+       binutils
+
+    # Where to put apps to
+    APPS_DIR=/twin/apps/
+    CODE_DIR=/twin/code/
+    mkdir -p "$APPS_DIR"
+    mkdir -p "$CODE_DIR"
+
+    #  ---------------------------------------------------------
+    # conda setup
+    bash /build/downloads/miniconda.sh -b -u -p /twin/miniconda3/
+    export PATH=/twin/miniconda3/bin:$PATH
+
+    # init for bash
+    conda init bash
+    conda config --append channels conda-forge
+    conda update -y -q conda
+    conda install wheel readline
+    # c compiler if so
+    conda install cxx-compiler
+
+    # later on for building PyDevice
+    ln -s /twin/miniconda3/bin/python3-config /twin/miniconda3/bin/python-config
+
+    #  ---------------------------------------------------------
+
+    # installing conda packages required further down the line
+    conda install -q wheel pymongo numpy scipy typing pandas matplotlib \
+                      xarray h5netcdf
+
+    conda install -q  pyvista ophyd bluesky databroker
+    # ------------------------------------------------------------------------------
+    #		     PyQt5 PySide2 fastapi uvicorn
+    # packages required for python packages
+    apt-get install -y --no-install-recommends \
+	libprotobuf23
+
+    # setup pip
+    pip3 install -q --upgrade pip wheel
+
+    # Inspect cache: report later what is used
+    # could be copied in on install
+    echo '----------------------------------------------------------------------'
+    echo pip3 cache
+    # pip3 cache list
+    echo '----------------------------------------------------------------------'
+    # install dedicated python packages
+    cd "$CODE_DIR"
+    /bin/bash /build/snippets/bact_packages.sh
+
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+    # avoid that file metadata persist
+    cat /build/snippets/bact_miniconda_container_custom_env.sh > "$CUSTOM_ENV"
+    chmod 755 "$CUSTOM_ENV"
+
+    # to be moved to requirements ---------------------------------------
+    # scipy: bact-math-utils
+    # h5netcdf: bact-analysis-bessyii
+    # : bessyii-dashboard
+
+    # cleaning up  ------------------------------------------------------
+    cd $TOP_DIR
+    echo '----------------------------------------------------------------------'
+    echo 'pip3 cache (after installing)'
+    pip3 cache list
+    echo '----------------------------------------------------------------------'
+    pip3 cache purge
+
+    conda remove -q -y cxx-compiler
+    conda clean --all -y
+
+    apt-get clean
+    rm -rf /.cache
+    rm -rf /root/.cache
+    rm -rf /build/wheels
+    rm -rf /build/downloads
+
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+
+%runscript
+    exec python3 "$@"

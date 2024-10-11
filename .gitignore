@@ -5,8 +5,11 @@ idea/
 # make file helper stamps
 build/*.stamp
 
-# built containterns 
+# built containterns
 bin/*.sif
+
+# EPICS local builds created by the makefile
+external-repositories/*.local
 
 # files built here ready to install in containers
 local/bin
