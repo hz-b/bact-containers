@@ -4,7 +4,6 @@
 #
 #
 # Container containing the core components of the digital twin
-
 Bootstrap: docker
 From: ubuntu:22.04
 
@@ -20,9 +19,6 @@ From: ubuntu:22.04
     ../external-repositories/epics-base/dbd/* /twin/epics/dbd/
     ../external-repositories/epics-base/lib/linux-x86_64/* /twin/epics/lib/
     ../external-repositories/epics-base/bin/linux-x86_64/* /twin/epics/bin/
-
-    ../external-repositories/PyDevice/lib/linux-x86_64/* /twin/epics/lib/
-    ../external-repositories/PyDevice/dbd/* /twin/epics/dbd/
 
     ../external-repositories/dt4acc/ /build/
 
@@ -47,6 +43,9 @@ From: ubuntu:22.04
     apt-get -q=2 update
     # tzdata ... reducing number of local mounts
     apt-get -q=2 install -y --no-install-recommends \
+       binutils \
+       gcc \
+       g++ \
        ca-certificates \
        less \
        bash \
@@ -55,6 +54,7 @@ From: ubuntu:22.04
        python3-pip \
        python3-venv \
        python3-minimal \
+       python3-dev \
        binutils
 
     #  ---------------------------------------------------------
@@ -84,11 +84,15 @@ From: ubuntu:22.04
     # installing python packages using conda and pip
     cd /build/
 
+    python3 -m venv /twin/venv
+    . /twin/venv/bin/activate
+    which python3
     python3 -m pip install --upgrade pip wheel
 
+
     # install what is missing
-    python3 -m pip install fastapi pymongo pydantic typing attrs \
-                 uvicorn httpx numpy scipy lark jsons uuid datetime    \
+    python3 -m pip install fastapi pymongo pydantic typing attrs        \
+                 uvicorn httpx numpy>2.0 scipy lark jsons uuid datetime \
 		 accelerator-toolbox \
 		 -q --find-links file:///build/wheels --no-index
 
@@ -99,8 +103,9 @@ From: ubuntu:22.04
     install_python_package_from_github bact-device-models
     echo "added bact packages"
 
-    # do I need to build p4p myself ?    
-    python3 -m pip install lat2db/ dt4acc/src/ -q --find-links file:///build/wheels --no-index
+    # do I need to build p4p myself ?
+    # most probably yes: numpy 2.0 compatability I guess
+    python3 -m pip install lat2db/ p4p/ dt4acc/src/  --find-links file:///build/wheels --no-index
 
     # ------------------------------------------------------------
     # clean up
@@ -108,24 +113,25 @@ From: ubuntu:22.04
     #
     cd /
     pip3 cache list
-    rm -r /build/
     # first pip ... can disapper later on
     pip3 cache purge
     # Tracking down a bug
 
-    rm -rf /.cache
-    rm -rf /root/.cache
-    rm -rf /build/wheels
 
+    # apt-get purge -y g++-11 g++ gcc-11 gcc binutils
+    # apt-get purge -y binutils
     apt-get clean
-    dpkg -r git  binutils
     apt-get autoremove -y
     apt-get clean
+    rm -fr /build/
     rm -rf /var/lib/apt/lists/*
+    rm -rf /.cache
+    rm -rf /root/.cache
 
     CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
     cat >$CUSTOM_ENV <<EOF
 #!/bin/bash
+. /twin/venv/bin/activate
 PS1='SoftIoc Twin \w > '
 export PATH=/twin/epics/bin/:/bin:/usr/bin/:/usr/local/bin/
 EOF
@@ -142,7 +148,19 @@ EOF
     echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
     echo '# end custom PS1 '                          >> /etc/bash.bashrc
 
+
+%test
+
+   /twin/venv/bin/python3 -c "import p4p; print(p4p); import softioc; print(softioc)"
+   /twin/venv/bin/python3 -c "import numpy; import scipy; import at"
+   # /usr/bin/python3 /usr/local/lib/python3.10/dist-packages/dt4acc/setup_configuration/softioc_server.py
+
+
 %runscript
     # perhaps to be moded to %startscript
     # currently run in an interactive manner
-    /twin/miniconda3/bin/python3 /twin/miniconda3/lib/python3.12/site-packages/dt4acc/setup_configuration/softioc_server.py
+
+    # todo:
+    #     derive prefix in automatic manner
+    #     activate venv at start
+    /twin/venv/bin/python3 /twin/venv/lib/python3.10/site-packages/dt4acc/setup_configuration/softioc_server.py

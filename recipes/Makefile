@@ -64,7 +64,7 @@ EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 # a container with python inside: used for pre download of wheels
 # or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
-
+BACT_IMG=$(BIN_DIR)/bact-container.sif
 # Finally: the digital twin containers
 # See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
@@ -85,12 +85,12 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(DT_P4P_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
-           $(BIN_DIR)/bact-container.sif         \
+           $(BACT_IMG)                           \
            $(BIN_DIR)/mongo-container.sif
 #           $(DT_IMG)                             \
 #           $(DT_IMG_MINIMAL)                     \
 #          $(BIN_DIR)/bact-archiver-build.sif    \
- 
+
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_DOWNLOAD_STAMP=$(BUILD_DIR)/pip-download-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
@@ -174,6 +174,8 @@ $(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IM
 $(DT_P4P_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG)
 
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
+
+$(BACT_IMG) : $(PYTHON_IMG) $(PIP_WHEEL_STAMP)
 
 twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
