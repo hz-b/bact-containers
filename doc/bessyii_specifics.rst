@@ -46,6 +46,7 @@ First setup the environment variable to tell the twin which database to use.
 
 ``export MONGODB_URL=mongodb://localhost:47017/bessyii``
 
+This can be ignored and Anonym wil be the default prefix.
 Then you need to tell the twin which prefix to use for the PVs. For example, you can name them after yourself. This prefix you will use later in scripts to switch between running on the twin and on the real machine.
 
 ``export DT4ACC_PREFIX="Pierre:DT"``
@@ -54,5 +55,3 @@ Start the twin:
 
 ``./pyat-as-twin-minimal.sif``
 
-
-``python3 dt4acc/src/dt4acc/setup_configuration/softioc_server.py``
