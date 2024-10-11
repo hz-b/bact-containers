@@ -52,11 +52,16 @@ From: ../bin/python-container.sif
 
     #  ---------------------------------------------------------
 
-    # installing conda packages required further down the line
-    conda install -q wheel pymongo numpy scipy typing pandas matplotlib \
-                      xarray h5netcdf
+    python3 -m venv /twin/bact-venv/
+    . /twin/bact-venv/bin/activate
 
-    conda install -q  pyvista ophyd bluesky databroker
+    python3 -m pip install --upgrade pip wheel
+
+    # installing conda packages required further down the line
+    python3 -m pip install -q --find-links file:///build/wheels --no-index \
+              pymongo numpy scipy typing pandas matplotlib \
+              xarray h5netcdf \
+	      pyvista ophyd bluesky databroker
     # ------------------------------------------------------------------------------
     #		     PyQt5 PySide2 fastapi uvicorn
     # packages required for python packages
@@ -64,7 +69,6 @@ From: ../bin/python-container.sif
 	libprotobuf23
 
     # setup pip
-    pip3 install -q --upgrade pip wheel
 
     # Inspect cache: report later what is used
     # could be copied in on install
@@ -86,6 +90,29 @@ From: ../bin/python-container.sif
     # h5netcdf: bact-analysis-bessyii
     # : bessyii-dashboard
 
+    # environemt start  ------------------------------------------------------
+
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+. /twin/bact-venv/bin/activate
+PS1='bact \w > '
+export PATH=/twin/bact-venv/bin/:/twin/epics/bin/:/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    CUSTOM_BASH='/.singularity_bash'
+cat >$CUSTOM_BASH<<EOF
+export PATH=/twin/bact-venv/bin/:/twin/epics/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    chmod 755 "$CUSTOM_ENV"
+    chmod 755 "$CUSTOM_BASH"
+
+    echo '# use custom PS1 '                          >> /etc/bash.bashrc
+    echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
+    echo '# end custom PS1 '                          >> /etc/bash.bashrc
+
+
+
     # cleaning up  ------------------------------------------------------
     cd $TOP_DIR
     echo '----------------------------------------------------------------------'
@@ -93,10 +120,8 @@ From: ../bin/python-container.sif
     pip3 cache list
     echo '----------------------------------------------------------------------'
     pip3 cache purge
-
-    conda remove -q -y cxx-compiler
-    conda clean --all -y
-
+    # left over files
+    find /twin/code -name '__pycache__' -delete
     apt-get clean
     rm -rf /.cache
     rm -rf /root/.cache
@@ -107,6 +132,14 @@ From: ../bin/python-container.sif
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
+
+%test
+   modules=""
+   for module in bact-device-models bact-math-utils bact-analysis bact-mls-ophyd
+   do
+	modules="$modules /twin/code/$module"
+   done
+   /twin/bact-venv/bin/python3 -m pytest $modules
 
 %runscript
     exec python3 "$@"
