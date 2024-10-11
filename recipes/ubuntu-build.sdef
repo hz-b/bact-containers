@@ -39,11 +39,11 @@ From: ubuntu:22.04
     #  ---------------------------------------------------------
     # python virtual environment ... needs to be activated in
     # environment section
-    mkdir /twin_build/
+    mkdir -p /twin/python-build/
 
-    python3 -m venv --system-site-packages /twin_build/venv
+    python3 -m venv --system-site-packages /twin/python-build/venv
     # activate the environment for the build process
-    echo '. /twin_build/venv/bin/activate' > /.singularity_bash
+    echo '. /twin/python-build/venv/bin/activate' > /.singularity_bash
     chmod 555 /.singularity_bash
 
     . /.singularity_bash
@@ -54,7 +54,9 @@ From: ubuntu:22.04
     CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
     cat >$CUSTOM_ENV <<EOF
 #!/bin/bash
-PS1='Boa build \w > '
+PS1='py build \w > '
+# too many surprises due to path!
+PATH=/twin/python-build/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 EOF
 
     chmod 755 "$CUSTOM_ENV"
@@ -62,15 +64,12 @@ EOF
     echo '# use custom PS1 '                          >> /etc/bash.bashrc
     echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
     echo '# end custom PS1 '                          >> /etc/bash.bashrc
-
     #  ---------------------------------------------------------
     # cleanup
     pip3 cache purge
+    apt-get clean
     rm -rf /.cache
     rm -rf /root/.cache
-
-
-    apt-get clean
 
 
 %runscript

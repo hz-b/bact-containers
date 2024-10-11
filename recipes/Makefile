@@ -209,7 +209,7 @@ $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 
 $(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP)
 	( cd $(T_DIR) \
-              && $(PYTHON_IMG) -m $(PIP_MODULE) wheel -w wheels/ softIoc \
+              && $(UBUNTU_BUILD_IMG) -c 'python3 -m $(PIP_MODULE) wheel -w wheels/ softIoc' \
               && $(TOUCH) $@ \
         )
 

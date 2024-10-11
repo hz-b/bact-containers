@@ -50,8 +50,8 @@ From: ../bin/python-container.sif
 
     # installing conda packages required further down the line
     python3 -m pip install -q --find-links file:///build/wheels --no-index \
-              pymongo numpy scipy typing pandas matplotlib \
-              xarray h5netcdf \
+              pymongo numpy scipy typing pandas matplotlib  \
+              xarray h5netcdf PyQt5 PySide2 fastapi uvicorn \
 	      pyvista ophyd bluesky databroker
     # ------------------------------------------------------------------------------
     #		     PyQt5 PySide2 fastapi uvicorn
@@ -127,6 +127,9 @@ EOF
 
 
 %test
+   /twin/bact-venv/bin/python3 -c "import matplotlib; matplotlib.use('qt5cairo')"
+   /twin/bact-venv/bin/python3 -c "import pyvista"
+
    modules=""
    for module in bact-device-models bact-math-utils bact-analysis bact-mls-ophyd
    do
