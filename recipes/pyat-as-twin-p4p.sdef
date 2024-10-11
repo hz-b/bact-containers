@@ -100,7 +100,7 @@ From: ubuntu:22.04
     echo "added bact packages"
 
     # do I need to build p4p myself ?    
-    python3 -m pip install lat2db/ p4p/ dt4acc/src/ -q --find-links file:///build/wheels --no-index
+    python3 -m pip install lat2db/ dt4acc/src/ -q --find-links file:///build/wheels --no-index
 
     # ------------------------------------------------------------
     # clean up
