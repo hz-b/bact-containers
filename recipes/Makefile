@@ -86,10 +86,12 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
            $(BACT_IMG)                           \
+           $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/mongo-container.sif
-#           $(DT_IMG)                             \
+
+# former twin based on PyDevice
+# please notice: the path dt4cc must then match too
 #           $(DT_IMG_MINIMAL)                     \
-#          $(BIN_DIR)/bact-archiver-build.sif    \
 
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_DOWNLOAD_STAMP=$(BUILD_DIR)/pip-download-whl.stamp
