@@ -30,6 +30,14 @@ Open new terminal and do:
 
 ``apptainer exec mongo-container.sif mongorestore --port 47017 --db bessyii --collection machines data/to_import/machines.bson``
 
+OR
+if a json dump was created it can be imported as: 
+apptainer > ``mongoimport --db bessyii --collection machines --file data/to_import/machines.bin --jsonArray``
+
+next import the accelerator.setup collection which is in accelerator.bin file.
+
+apptainer > ``mongoimport --db bessyii --collection accelerator.setup --file data/to_import/accelerator.bin --jsonArray``
+
 This will import the data for BESSY II into the database.
 
 3. Start the twin
@@ -45,3 +53,6 @@ Then you need to tell the twin which prefix to use for the PVs. For example, you
 Start the twin:
 
 ``./pyat-as-twin-minimal.sif``
+
+
+``python3 dt4acc/src/dt4acc/setup_configuration/softioc_server.py``
