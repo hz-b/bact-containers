@@ -19,66 +19,99 @@ From: ../bin/python-container.sif
 %files
     ../wheels/*.whl /build/wheels/
     ../wheels/*.tar.gz /build/wheels/
-    snippets/bact_packages.sh /build/snippets/
+    snippets/*.sh /build/snippets/
 
 
 %environment
-    . /build/venv/bin/activate
+    /.singularity.d/env/99-zz_custom_env.sh
 
 
 %post
-    export TOP_DIR=`pwd`
-    mkdir -p build
-    cd build
-    export BUILD_DIR=`pwd`
+    # ------------------------------------------------------------------------------
+    # defining directories
 
-    # unhandy to call in
-    python3 -m venv /build/venv
-    . /build/venv/bin/activate
+    apt-get -q=2 update
+    # tzdata ... reducing number of local mounts
+    apt-get -q=2 install -y --no-install-recommends \
+       ca-certificates \
+       less \
+       bash \
+       git \
+       tzdata \
+       binutils
 
+    # Where to put apps to
+    APPS_DIR=/twin/apps/
+    CODE_DIR=/twin/code/
+    mkdir -p "$APPS_DIR"
+    mkdir -p "$CODE_DIR"
 
-    ls /build/snippets
-    echo $SHELL
+    #  ---------------------------------------------------------
+    # later on for building PyDevice
+    # ln -s /twin/bin/python3-config /bin/python-config
 
+    #  ---------------------------------------------------------
+
+    python3 -m venv /twin/bact-venv/
+    . /twin/bact-venv/bin/activate
+
+    python3 -m pip install --upgrade pip wheel
+
+    # installing conda packages required further down the line
+    python3 -m pip install -q --find-links file:///build/wheels --no-index \
+              pymongo numpy scipy typing pandas matplotlib \
+              xarray h5netcdf \
+	      pyvista ophyd bluesky databroker
+    # ------------------------------------------------------------------------------
+    #		     PyQt5 PySide2 fastapi uvicorn
+    # packages required for python packages
     apt-get install -y --no-install-recommends \
 	libprotobuf23
 
     # setup pip
-    pip3 install --upgrade pip wheel
 
     # Inspect cache: report later what is used
     # could be copied in on install
     echo '----------------------------------------------------------------------'
     echo pip3 cache
-    pip3 cache list
+    # pip3 cache list
     echo '----------------------------------------------------------------------'
-    pip3 install bact-archiver --find-links file:///build/wheels --no-index
-
+    # install dedicated python packages
+    cd "$CODE_DIR"
     /bin/bash /build/snippets/bact_packages.sh
 
-    pip3 install pyepics --find-links file:///build/wheels  --no-index
-
-    git clone https://github.com/hz-b/bact-archiver-bessyii.git
-    cd bact-archiver-bessyii
-    if [ -e requirements.txt ] ; then
-          pip3 install -r requirements.txt  --find-links file:///build/wheels  --no-index
-    fi
-    python3 setup.py install
-    cd ..
-
-    # something to get rid off
-    # echo 'building bact2 --------------------------------------'
-    # git clone https://github.com/hz-b/bact2.git
-
-    # cd bact2
-    # pip3 install -e .
-    # cd ..
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+    # avoid that file metadata persist
+    cat /build/snippets/bact_miniconda_container_custom_env.sh > "$CUSTOM_ENV"
+    chmod 755 "$CUSTOM_ENV"
 
     # to be moved to requirements ---------------------------------------
     # scipy: bact-math-utils
     # h5netcdf: bact-analysis-bessyii
-    # fastapi, uvicorn: bessyii-dashboard
-    pip3 install h5netcdf scipy fastapi uvicorn  --find-links file:///build/wheels  --no-index
+    # : bessyii-dashboard
+
+    # environemt start  ------------------------------------------------------
+
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+. /twin/bact-venv/bin/activate
+PS1='bact \w > '
+export PATH=/twin/bact-venv/bin/:/twin/epics/bin/:/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    CUSTOM_BASH='/.singularity_bash'
+cat >$CUSTOM_BASH<<EOF
+export PATH=/twin/bact-venv/bin/:/twin/epics/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    chmod 755 "$CUSTOM_ENV"
+    chmod 755 "$CUSTOM_BASH"
+
+    echo '# use custom PS1 '                          >> /etc/bash.bashrc
+    echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
+    echo '# end custom PS1 '                          >> /etc/bash.bashrc
+
+
 
     # cleaning up  ------------------------------------------------------
     cd $TOP_DIR
@@ -87,11 +120,26 @@ From: ../bin/python-container.sif
     pip3 cache list
     echo '----------------------------------------------------------------------'
     pip3 cache purge
-    # don't remove build directory yet ... partly local installs
-    # rm -r build
-    rm -r build/wheels
+    # left over files
+    find /twin/code -name '__pycache__' -delete
     apt-get clean
+    rm -rf /.cache
+    rm -rf /root/.cache
+    rm -rf /build/wheels
+    rm -rf /build/downloads
 
+    apt-get autoremove -y
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+
+%test
+   modules=""
+   for module in bact-device-models bact-math-utils bact-analysis bact-mls-ophyd
+   do
+	modules="$modules /twin/code/$module"
+   done
+   /twin/bact-venv/bin/python3 -m pytest $modules
 
 %runscript
     exec python3 "$@"

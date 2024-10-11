@@ -9,7 +9,11 @@ bact-bessyii-ophyd        \
 lat2db        \
 "
 
-. bact_packages_function.sh
+echo $0
+T_SNIPPETS_DIR=`dirname $0`
+echo "dirs here $T_SNIPPETS_DIR"
+
+. "$T_SNIPPETS_DIR"/bact_package_functions.sh
 
 for i in $packages
 do

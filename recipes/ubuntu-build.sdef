@@ -1,15 +1,28 @@
 Bootstrap: docker
 From: ubuntu:22.04
 
+%environment
+    # Make perl complain less
+    # and hopefully also these many local mounts
+    LC_ALL="C"
+    LANG=$LC_ALL
+    export LC_ALL LANG
+    # start python environment by default
+    . /.singularity_bash
+
+
 %post
     export DEBIAN_FRONTEND=noninteractive
 
     apt-get update -q=2
     apt-get install -q=2 -y --no-install-recommends \
+        tzdata \
 	python3-dev \
 	python3-pip \
+	python3-venv \
 	python3-wheel \
 	python3-setuptools \
+	python3-numpy \
 	protobuf-compiler \
 	libprotobuf-dev \
 	g++ \
@@ -18,7 +31,47 @@ From: ubuntu:22.04
 	bash \
 	less
 
-  apt-get clean
+    #  ---------------------------------------------------------
+    # all builds using python3
+    ln -s /usr/bin/python3 /usr/bin/python
+    ln -s /usr/bin/python3-config /usr/bin/python-config
+
+    #  ---------------------------------------------------------
+    # python virtual environment ... needs to be activated in
+    # environment section
+    mkdir /twin_build/
+
+    python3 -m venv --system-site-packages /twin_build/venv
+    # activate the environment for the build process
+    echo '. /twin_build/venv/bin/activate' > /.singularity_bash
+    chmod 555 /.singularity_bash
+
+    . /.singularity_bash
+
+    python3 -m pip install --upgrade pip wheel setuptools
+    #  ---------------------------------------------------------
+    # prompt on bash
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+PS1='Boa build \w > '
+EOF
+
+    chmod 755 "$CUSTOM_ENV"
+
+    echo '# use custom PS1 '                          >> /etc/bash.bashrc
+    echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
+    echo '# end custom PS1 '                          >> /etc/bash.bashrc
+
+    #  ---------------------------------------------------------
+    # cleanup
+    pip3 cache purge
+    rm -rf /.cache
+    rm -rf /root/.cache
+
+
+    apt-get clean
+
 
 %runscript
     exec bash "$@"

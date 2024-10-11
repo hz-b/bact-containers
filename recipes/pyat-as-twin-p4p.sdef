@@ -1,0 +1,166 @@
+#
+# Author: Pierre Begemotowitsch     <pierre.schnizer@helmholtz-berlin.de>
+#         Wahedullah Sulaiman Khail <Wahedullah.Sulaiman_Khail@helmholtz-berlin.de>
+#
+#
+# Container containing the core components of the digital twin
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    snippets/*.sh /build/snippets/
+    # guessing where wheels will be searched for
+    ../wheels/*.whl /build/wheels/
+    ../wheels/*.tar.gz /build/wheels/
+    ../external-repositories/lat2db /build/
+    ../external-repositories/p4p /build/
+
+    # EPICS support
+    ../external-repositories/epics-base/dbd/* /twin/epics/dbd/
+    ../external-repositories/epics-base/lib/linux-x86_64/* /twin/epics/lib/
+    ../external-repositories/epics-base/bin/linux-x86_64/* /twin/epics/bin/
+
+    ../external-repositories/dt4acc/ /build/
+
+
+%environment
+    # Make perl complain less
+    # and hopefully also these many local mounts
+    LC_ALL="C"
+    LANG=$LC_ALL
+    export LC_ALL LANG
+
+    /.singularity.d/env/99-zz_custom_env.sh
+
+    # start python environment by default
+    # . /.singularity_bash
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    cd /build/
+
+    apt-get -q=2 update
+    # tzdata ... reducing number of local mounts
+    apt-get -q=2 install -y --no-install-recommends \
+       binutils \
+       gcc \
+       g++ \
+       ca-certificates \
+       less \
+       bash \
+       git \
+       tzdata \
+       python3-pip \
+       python3-venv \
+       python3-minimal \
+       python3-dev \
+       binutils
+
+    #  ---------------------------------------------------------
+
+    # remove what was copied too much
+    find /twin/epics/lib/ -name '*.a' | xargs rm
+    find /twin/epics/bin -name '*.pl' | xargs rm
+    find /twin/epics/bin -name '*.py' | xargs rm
+    find /twin/epics/bin -name 'S99*' | xargs rm
+    find /twin/epics/bin -type f -a  ! -name '*.service' | xargs strip
+    find /twin/epics/lib -type f | xargs strip
+
+    #  ---------------------------------------------------------
+    # add /twin/lib so that it will be used by ldconfig
+    # do not forget to run ldconfig after everything has been
+    # installed
+    opt_conf_path=/etc/ld.so.conf.d/twin.conf
+    echo '# parts built during process go here' >  $opt_conf_path
+    echo '/twin/lib'                            >> $opt_conf_path
+    echo '/twin/epics/lib'                      >> $opt_conf_path
+    echo '/twin/epics/lib/linux-x86_64'         >> $opt_conf_path
+    echo '#EOF'                                 >> $opt_conf_path
+
+    ldconfig
+
+    #  ---------------------------------------------------------
+    # installing python packages using conda and pip
+    cd /build/
+
+    python3 -m venv /twin/venv
+    . /twin/venv/bin/activate
+    which python3
+    python3 -m pip install --upgrade pip wheel
+
+
+    # install what is missing
+    python3 -m pip install fastapi pymongo pydantic typing attrs        \
+                 uvicorn httpx numpy>2.0 scipy lark jsons uuid datetime \
+		 accelerator-toolbox \
+		 -q --find-links file:///build/wheels --no-index
+
+    # installing required packages
+    . /build/snippets/bact_package_functions.sh
+
+    echo "adding bact packages"
+    install_python_package_from_github bact-device-models
+    echo "added bact packages"
+
+    # do I need to build p4p myself ?
+    # most probably yes: numpy 2.0 compatability I guess
+    python3 -m pip install lat2db/ p4p/ dt4acc/src/ --find-links file:///build/wheels --no-index
+
+    # ------------------------------------------------------------
+    # clean up
+    #
+    #
+    cd /
+    pip3 cache list
+    # first pip ... can disapper later on
+    pip3 cache purge
+    # Tracking down a bug
+
+
+    # apt-get purge -y g++-11 g++ gcc-11 gcc binutils
+    # apt-get purge -y binutils
+    apt-get clean
+    apt-get autoremove -y
+    apt-get clean
+    rm -fr /build/
+    rm -rf /var/lib/apt/lists/*
+    rm -rf /.cache
+    rm -rf /root/.cache
+
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+. /twin/venv/bin/activate
+PS1='SoftIoc Twin \w > '
+export PATH=/twin/venv/bin/:/twin/epics/bin/:/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    CUSTOM_BASH='/.singularity_bash'
+cat >$CUSTOM_BASH<<EOF
+export PATH=/twin/epics/bin:/usr/bin/:/usr/local/bin/
+EOF
+
+    chmod 755 "$CUSTOM_ENV"
+    chmod 755 "$CUSTOM_BASH"
+
+    echo '# use custom PS1 '                          >> /etc/bash.bashrc
+    echo '. /.singularity.d/env/99-zz_custom_env.sh'  >> /etc/bash.bashrc
+    echo '# end custom PS1 '                          >> /etc/bash.bashrc
+
+
+%test
+
+   /twin/venv/bin/python3 -c "import p4p; print(p4p); import softioc; print(softioc)"
+   /twin/venv/bin/python3 -c "import numpy; import scipy; import at"
+   # /usr/bin/python3 /usr/local/lib/python3.10/dist-packages/dt4acc/setup_configuration/softioc_server.py
+
+
+%runscript
+    # perhaps to be moded to %startscript
+    # currently run in an interactive manner
+
+    # todo:
+    #     derive prefix in automatic manner
+    #     activate venv at start
+    /twin/venv/bin/python3 /twin/venv/lib/python3.10/site-packages/dt4acc/setup_configuration/softioc_server.py
