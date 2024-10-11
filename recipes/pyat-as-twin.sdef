@@ -5,9 +5,6 @@
 #
 # Container containing the core components of the digital twin
 
-# Bootstrap: docker
-# From: ubuntu:22.04
-
 Bootstrap: localimage
 From: ../bin/epics7-pydevice.sif
 

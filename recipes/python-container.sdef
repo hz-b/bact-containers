@@ -6,7 +6,7 @@
 # Container containing python basis
 
 Bootstrap: docker
-From: ubuntu:22.04
+From: ubuntu:24.04
 
 %environment
     /.singularity.d/env/99-zz_custom_env.sh
