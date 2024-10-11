@@ -1,10 +1,27 @@
+#------------------------------------------------------------------------------
+# makefile for building containers
+#
+# Authors: Pierre Schnizer <pierre.schnizer@helmholtz-berlin.de>
+#          Waheedullah Sulaiman Khail <waheedullah.sulaiman_khail@helmholtz-berlin.de>
+#
+# The containers are built in the following manner:
+#    1. containers are built, that contain the build environment
+#    2. external prerequistes are built from external repositories.
+#       a. epics-base
+#       b. PyDevice
+#       c. dt4acc
+#    3. containers are built that typically will be used by users
+#
+# NB: this makefile needs GNU make to work
+#------------------------------------------------------------------------------
+
 # needs to be defined by the location of this file
 T_DIR_ABS =$(shell cd $(CURDIR)/../ && pwd)
 T_DIR=$(T_DIR_ABS)
 
 # for datascc
-ifeq ($(shell hostname), 'datascc')
-    ifeq ($(shell id -u -n), 'schnizer')
+ifeq ($(shell hostname), datascc)
+    ifeq ($(shell id -u -n), schnizer)
         T_DIR=/home/schnizer/Devel/github/hz-b/bact-containers
     endif
 endif
@@ -21,6 +38,9 @@ NPROC=nproc
 # one job per processor
 N_JOBS=$(shell nproc)
 
+# does not always work with link
+LN_S=cp
+
 APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP_MODULE=pip
@@ -28,14 +48,38 @@ CMAKE=cmake
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
+# a intermediate container: contains EPICS. Development will
+# typically not impact EPICS. Thus final container build times are
+# reduced given that these are stacked on this container
 EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
+# a container with python inside: used for pre download of wheels
+# or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 
+# Finally: the digital twin containers
+# See below for a list of all build containers
+DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
+DT_P4P_IMG=$(BIN_DIR)/pyat-as-twin-p4p.sif
+DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
+
+# directories of external
+epics_DIR=$(SRC_DIR)/epics-base/
+pydevice_DIR=$(SRC_DIR)/PyDevice/
+dt4acc_DIR=$(SRC_DIR)/dt4acc/
+RELEASE_LOCAL=$(SRC_DIR)/RELEASE.local
+CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
+
+PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
+
+
 CONTAINERS=$(PYTHON_IMG)                         \
+           $(DT_IMG)                             \
+           $(DT_IMG_MINIMAL)                     \
+           $(DT_P4P_IMG)                         \
+           $(UBUNTU_BUILD_IMG)                   \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
            $(BIN_DIR)/bact-archiver-build.sif    \
-           $(BIN_DIR)/pyat-as-twin.sif           \
            $(BIN_DIR)/bact-container.sif         \
            $(BIN_DIR)/mongo-container.sif
 
@@ -43,12 +87,26 @@ CONTAINERS=$(PYTHON_IMG)                         \
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
+EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
+PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
+DT4ACC_BUILD_STAMP=$(BUILD_DIR)/dt4acc-built.stamp
 
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
-       $(BACT2_BESSYII_WHEEL_STAMP)
+       $(BACT2_BESSYII_WHEEL_STAMP) \
+       $(EPICS_BUILD_STAMP)         \
+       $(PYDEVICE_BUILD_STAMP)      \
+       $(DT4ACC_BUILD_STAMP)
 
+# ------------------------------------------------------------------------------
+
+
+# Some dedicated entry points
 all : echo_t_dir $(CONTAINERS)
+
+twin : $(DT_IMG)
+
+twin-minimal : $(DT_IMG_MINIMAL)
 
 echo_t_dir :
 	@echo $(CURDIR)
@@ -73,12 +131,26 @@ clean_local :
 	$(RM) $(RMFLAGS) -r $(LOCAL_DIR)/lib
 	$(RM) $(RMFLAGS) -r $(LOCAL_DIR)/include
 
+clean_prebuilts :
+	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
+	@make clean -C $(epics_DIR)
+	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
+	@make clean -C $(pydevice_DIR)
+
+
+# ------------------------------------------------------------------------------
+# the actual work horse
+
 $(BIN_DIR)/%.sif : %.sdef
 	$(APPTAINER) build $@ $<
 
 
 # ------------------------------------------------------------------------------
 # containers depending on other containers or further downloads
+$(EPICS7_IMG) : $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
+
+$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
+$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP)
 
 $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
                                        bact-archiver-build.sdef \
@@ -100,6 +172,41 @@ $(PIP_WHEEL_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
                   -d wheels/ --check-build-dependencies \
               && $(TOUCH) $@ \
        )
+
+# ------------------------------------------------------------
+# build epics and the components dependent on it
+
+$(DT4ACC_BUILD_STAMP) : $(PYDEVICE_BUILD_STAMP) $(CONFIG_SITE_LOCAL)
+	$(UBUNTU_BUILD_IMG) -c "make -C $(dt4acc_DIR) -j $(N_JOBS)" \
+         && $(TOUCH) $@
+
+$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(PYDEV_RELEASE_LOCAL)
+	$(UBUNTU_BUILD_IMG) -c "make -C $(pydevice_DIR) -j $(N_JOBS)" \
+         && $(TOUCH) $@
+
+$(PYDEV_RELEASE_LOCAL) : $(RELEASE_LOCAL)
+	$(LN_S) $^ $@
+
+$(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_MINICONDA_IMG)
+	$(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
+        && $(TOUCH) $@
+
+RELEASE_FILES : $(RELEASE_LOCAL) $(CONFIG_SITE_LOCAL)
+
+$(RELEASE_LOCAL) :
+	@echo "Creating $(RELEASE_LOCAL)"
+	@echo "# Release.local ... reflecting local build" >  $@
+	@echo "HOME_DEVEL=$(SRC_DIR)"			  >> $@
+	@echo "EPICS_BASE=$(epics_DIR)"			  >> $@
+	@echo "PYDEVICE=$(pydevice_DIR)"			  >> $@
+	@echo "#EOF"                                       >> $@
+
+
+$(CONFIG_SITE_LOCAL) :
+	@echo "Creating $(CONFIG_SITE_LOCAL)"
+	@echo "# configuring local site                  " >  $@
+	@echo "# STATIC_BUILD=YES"                         >> $@
+	@echo "#EOF"                                       >> $@
 
 #------------------------------------------------------------
 # bact packages to wheels
