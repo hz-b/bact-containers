@@ -32,7 +32,8 @@ From: ../bin/python-container.sif
     apt-get -q=2 update
     # tzdata ... reducing number of local mounts
     apt-get -q=2 install -y --no-install-recommends \
-       git \
+	libprotobuf32 \
+        git
 
     # defining directories
     # Where to put apps to
@@ -56,8 +57,6 @@ From: ../bin/python-container.sif
     # ------------------------------------------------------------------------------
     #		     PyQt5 PySide2 fastapi uvicorn
     # packages required for python packages
-    apt-get install -y --no-install-recommends \
-	libprotobuf23
 
     # setup pip
 

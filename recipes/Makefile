@@ -207,7 +207,7 @@ $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 
 # prebuild wheels ... need a more flex
 
-$(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP)
+$(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP) $(UBUNTU_BUILD_IMG)
 	( cd $(T_DIR) \
               && $(UBUNTU_BUILD_IMG) -c 'python3 -m $(PIP_MODULE) wheel -w wheels/ softIoc' \
               && $(TOUCH) $@ \
