@@ -6,44 +6,83 @@
 # Container containing python basis
 
 Bootstrap: docker
-From: ubuntu:22.04
-# From: debian:stable
+From: ubuntu:24.04
 
+%environment
+    /.singularity.d/env/99-zz_custom_env.sh
+    LANG=en_US.UTF-8
+    LC_ALL=$LANG
+    export LC_ALL LANG
 
 %post
+    #  ---------------------------------------------------------
+    # additional root directories ...
+    mkdir -p /twin/python/
+    mkdir /build
+
+    #  ---------------------------------------------------------
+    # install required packages
     export DEBIAN_FRONTEND=noninteractive
 
     apt-get update -q=2
 
-    # pygt5 and cairo so that c/c++ libraries are
-    # installed too
     # need to find out how much of these packages I
+    # python minimal reduces container size from 96 to 90 MiB
     # can remove again
     apt-get install -q=2 -y --no-install-recommends  \
-       python3        \
-       python3-pip    \
-       python3-venv   \
-       python3-pyqt5  \
-       python3-cairo  \
-       python3-numpy      \
-       python3-scipy      \
-       python3-matplotlib \
-       git \
-       bash \
+       python3         \
+       python3-pip     \
+       python3-venv    \
+       locales         \
+       tzdata          \
+       bash            \
        less
 
-#       python3-matplotlib \
-#       python3-pandas \
-   # further builds require an updated pip
-   pip3 install --upgrade pip wheel
-   # remove downloaded packages
-   apt-get clean
-   pip3 cache purge
-   rm -fr /root/.cache
-   rm -fr /.cache
-   ## remove the whole cache
-   ## rm -r /var/cache
+
+    # pygt5 and cairo so that c/c++ libraries are
+    # installed too
+# need to check how far that's necessary
+#       python3-pyqt5  \
+#       python3-cairo  \
+
+    #  ---------------------------------------------------------
+    # thx to Elena Sacci ...
+    sed -i "s/# en_US.UTF-8/en_US.UTF-8/" /etc/locale.gen && locale-gen
+    #  ---------------------------------------------------------
+
+    #  ---------------------------------------------------------
+    # up to data python
+    # further builds require an updated pip
+    python3 -m venv /twin/python/venv/
+    . /twin/python/venv/bin/activate
+    # up to date pip and wheel ...
+    python3 -m pip install --upgrade pip wheel
+
+    #  ---------------------------------------------------------
+    # set up environment
+
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+. /twin/python/venv/bin/activate
+PS1='py cont. \w > '
+export PATH=/twin/python/venv/bin/:/usr/bin/:/bin/:/usr/local/bin/
+# EOF
+EOF
+
+    chmod 555 "$CUSTOM_ENV"
+
+    #  ---------------------------------------------------------
+    # clean up
+    # remove downloaded packages
+    apt-get clean
+    pip3 cache purge
+    rm -fr /root/.cache
+    rm -fr /.cache
+    ## remove the whole cache
+    ## rm -r /var/cache
 
 
 %runscript
-    exec python3 "$@"
+    exec /twin/python/venv/bin/python3 "$@"

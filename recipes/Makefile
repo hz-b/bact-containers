@@ -86,10 +86,14 @@ CONTAINERS=$(PYTHON_IMG)                         \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
            $(BACT_IMG)                           \
+           $(BIN_DIR)/bact-archiver-build.sif    \
            $(BIN_DIR)/mongo-container.sif
-#           $(DT_IMG)                             \
+
+# former twin based on PyDevice
+# please notice: the branch of dt4cc must then match
+# too
+# see external_repositories
 #           $(DT_IMG_MINIMAL)                     \
-#          $(BIN_DIR)/bact-archiver-build.sif    \
 
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_DOWNLOAD_STAMP=$(BUILD_DIR)/pip-download-whl.stamp
@@ -203,9 +207,9 @@ $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 
 # prebuild wheels ... need a more flex
 
-$(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP)
+$(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP) $(UBUNTU_BUILD_IMG)
 	( cd $(T_DIR) \
-              && $(PYTHON_IMG) -m $(PIP_MODULE) wheel -w wheels/ softIoc \
+              && $(UBUNTU_BUILD_IMG) -c 'python3 -m $(PIP_MODULE) wheel -w wheels/ softIoc' \
               && $(TOUCH) $@ \
         )
 
