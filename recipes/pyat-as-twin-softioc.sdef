@@ -155,7 +155,7 @@ EOF
 
    /twin/venv/bin/python3 -c "import p4p; print(p4p); import softioc; print(softioc)"
    /twin/venv/bin/python3 -c "import numpy; import scipy; import at"
-   # /usr/bin/python3 /usr/local/lib/python3.10/dist-packages/dt4acc/setup_configuration/softioc_server.py
+   # /usr/bin/python3 /usr/local/lib/python3.12/dist-packages/dt4acc/setup_configuration/softioc_server.py
 
 
 %runscript
@@ -165,4 +165,4 @@ EOF
     # todo:
     #     derive prefix in automatic manner
     #     activate venv at start
-    /twin/venv/bin/python3 /twin/venv/lib/python3.10/site-packages/dt4acc/setup_configuration/softioc_server.py
+    /twin/venv/bin/python3.12 -m dt4acc.setup_configuration.softioc_server

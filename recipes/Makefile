@@ -52,8 +52,6 @@ CURL=curl
 LN_S=cp
 
 
-MINICONDA_INSTALLER=$(DOWNLOAD_DIR)/miniconda.sh
-
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 # a intermediate container: contains EPICS. Development will
@@ -68,8 +66,7 @@ BACT_IMG=$(BIN_DIR)/bact-container.sif
 # Finally: the digital twin containers
 # See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
-DT_P4P_IMG=$(BIN_DIR)/pyat-as-twin-p4p.sif
-DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
+DT_SOFTIOC_IMG=$(BIN_DIR)/pyat-as-twin-softioc.sif
 
 # directories of external
 epics_DIR=$(SRC_DIR)/epics-base/
@@ -82,7 +79,7 @@ PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 
 CONTAINERS=$(PYTHON_IMG)                         \
-           $(DT_P4P_IMG)                         \
+           $(DT_SOFTIOC_IMG)                      \
            $(UBUNTU_BUILD_IMG)                   \
            $(EPICS7_IMG)                         \
            $(BACT_IMG)                           \
@@ -98,7 +95,6 @@ CONTAINERS=$(PYTHON_IMG)                         \
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_DOWNLOAD_STAMP=$(BUILD_DIR)/pip-download-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
-MINICONDA_INSTALLER_STAMP=$(BUILD_DIR)/miniconda-installer.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
@@ -117,7 +113,7 @@ STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
 
 
 # Some dedicated entry points
-all : echo_t_dir $(CONTAINERS)
+all :  $(CONTAINERS)
 
 twin : $(DT_IMG)
 
@@ -173,9 +169,9 @@ $(EPICS7_IMG) : $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP)
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS7_IMG) $(UBUNTU_BUILD_IMG)
 $(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(EPICS7_IMG) $(EPICS_BUILD_STAMP)
 
-$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(EPICS_BUILD_STAMP)
+$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS_BUILD_STAMP)
 
-$(DT_P4P_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG)
+$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
 
@@ -190,11 +186,6 @@ twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 #                                       $(UBUNTU_BUILD_IMG)      \
 
 
-$(BIN_DIR)/bact-miniconda-container.sif : bact-miniconda-container.sdef \
-                                          $(BIN_DIR)/python-container.sif \
-                                          $(PIP_WHEEL_STAMP)
-
-$(UBUNTU_BUILD_MINICONDA_IMG) : $(MINICONDA_INSTALLER_STAMP)
 # ------------------------------------------------------------------------------
 # download wheels
 
