@@ -36,8 +36,11 @@ From: ubuntu:24.04
        locales         \
        tzdata          \
        bash            \
+       git             \
+       binutils        \
        less
 
+#       libc-bin        \
 
     # pygt5 and cairo so that c/c++ libraries are
     # installed too
@@ -53,12 +56,11 @@ From: ubuntu:24.04
     #  ---------------------------------------------------------
     # up to data python
     # further builds require an updated pip
-    python3 -m venv /twin/python/venv/
+    python3 -m venv --system-site-packages /twin/python/venv/
     . /twin/python/venv/bin/activate
     # up to date pip and wheel ...
     python3 -m pip install --upgrade pip wheel
 
-    #  ---------------------------------------------------------
     # set up environment
 
     CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'

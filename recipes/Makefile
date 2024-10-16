@@ -9,7 +9,6 @@
 #    2. external prerequistes are built from external repositories.
 #       a. epics-base
 #       b. PyDevice
-#       c. dt4acc
 #    3. containers are built that typically will be used by users
 #
 # NB: this makefile needs GNU make to work
@@ -47,6 +46,8 @@ APPTAINER=N_JOBS=$(N_JOBS) apptainer
 TOUCH=touch
 PIP_MODULE=pip
 CURL=curl
+MKDIR=mkdir
+TAR=tar
 
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
@@ -95,16 +96,18 @@ PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
-DT4ACC_BUILD_STAMP=$(BUILD_DIR)/dt4acc-built.stamp
+
+EPICS_UTILS=$(BUILD_DIR)/epics-utils.tar.gz
+P4P_WHEEL_STAMP = $(BUILD_DIR)/p4p-whl.stamp
 
 STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
        $(PIP_ARCHIVER_WHEEL_STAMP)  \
        $(PIP_WHEEL_DOWNLOAD_STAMP)  \
        $(PIP_WHEEL_STAMP)           \
        $(BACT2_BESSYII_WHEEL_STAMP) \
+       $(P4P_WHEEL_STAMP)           \
        $(EPICS_BUILD_STAMP)         \
-       $(PYDEVICE_BUILD_STAMP)      \
-       $(DT4ACC_BUILD_STAMP)
+       $(PYDEVICE_BUILD_STAMP)
 
 # ------------------------------------------------------------------------------
 
@@ -163,19 +166,11 @@ $(BIN_DIR)/%.sif : %.sdef
 # containers depending on other containers or further downloads
 $(EPICS7_IMG) : $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
 
-$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS7_IMG) $(UBUNTU_BUILD_IMG)
-$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(EPICS7_IMG) $(EPICS_BUILD_STAMP)
+$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(P4P_WHEEL_STAMP) $(EPICS_UTILS)
 
-$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS_BUILD_STAMP)
-
-$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
-
-$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
+$(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(UBUNTU_BUILD_IMG)
 
 $(BACT_IMG) : $(PYTHON_IMG) $(PIP_WHEEL_STAMP)
-
-twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
-
 
 
 # $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)        \
@@ -193,7 +188,15 @@ $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
               && $(TOUCH) $@ \
        )
 
-# prebuild wheels ... need a more flex
+# prebuild wheels: so that g++ does not need to be included in last
+# build
+
+$()
+$(P4P_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
+	( cd $(T_DIR)/ \
+              && $(UBUNTU_BUILD_IMG) -c 'python3 -m $(PIP_MODULE) wheel -w wheels/ external-repositories/p4p/' \
+              && $(TOUCH) $@ \
+        )
 
 $(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP) $(UBUNTU_BUILD_IMG)
 	( cd $(T_DIR) \
@@ -205,16 +208,34 @@ $(PIP_WHEEL_STAMP) : $(PIP_WHEEL_DOWNLOAD_STAMP) $(UBUNTU_BUILD_IMG)
 # ------------------------------------------------------------
 # build epics and the components dependent on it
 
-$(DT4ACC_BUILD_STAMP) : $(PYDEVICE_BUILD_STAMP) $(CONFIG_SITE_LOCAL)
-	$(UBUNTU_BUILD_IMG) -c "make -C $(dt4acc_DIR) -j $(N_JOBS)" \
-         && $(TOUCH) $@
 
-$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(PYDEV_RELEASE_LOCAL)
+$(PYDEVICE_BUILD_STAMP) : $(EPICS_BUILD_STAMP) $(PYDEV_RELEASE_LOCAL)
 	$(UBUNTU_BUILD_IMG) -c "make -C $(pydevice_DIR) -j $(N_JOBS)" \
          && $(TOUCH) $@
 
 $(PYDEV_RELEASE_LOCAL) : $(RELEASE_LOCAL)
 	$(LN_S) $^ $@
+
+$(EPICS_UTILS) : $(EPICS_BUILD_STAMP)
+	(\
+               cd $(T_DIR) \
+            && ( $(MKDIR) -p $(BUILD_DIR)/epics/ )                               \
+            && ( $(TAR) -cf- -C external-repositories/epics-base/ dbd/           \
+                     bin/linux-x86_64/ lib/linux-x86_64/                         \
+                   | $(TAR) -xf- -C $(BUILD_DIR)/epics/ )                        \
+	    && mv $(BUILD_DIR)/epics/bin/linux-x86_64/* $(BUILD_DIR)/epics/bin/  \
+	    && mv $(BUILD_DIR)/epics/lib/linux-x86_64/* $(BUILD_DIR)/epics/lib/  \
+            && rmdir $(BUILD_DIR)/epics/lib/linux-x86_64/                        \
+            && rmdir $(BUILD_DIR)/epics/bin/linux-x86_64/                        \
+            && ( find $(BUILD_DIR)/epics/lib -name '*.a'  | xargs rm    )        \
+            && ( find $(BUILD_DIR)/epics/bin -name '*.pl' | xargs rm    )        \
+            && ( find $(BUILD_DIR)/epics/bin -name '*.py' | xargs rm    )        \
+            && ( find $(BUILD_DIR)/epics/bin -name 'S99*' | xargs rm    )        \
+            && ( find $(BUILD_DIR)/epics/lib -type f      | xargs strip )        \
+            && ( find $(BUILD_DIR)/epics/bin -type f -a  ! -name '*.service' | xargs strip ) \
+	    &&  $(TAR) -zcf $@ -C $(BUILD_DIR) epics/                            \
+        )
+
 
 $(EPICS_BUILD_STAMP) : $(UBUNTU_BUILD_IMG)
 	$(UBUNTU_BUILD_IMG) -c "make -C $(epics_DIR) -j $(N_JOBS)" \
