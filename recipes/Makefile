@@ -48,10 +48,6 @@ TOUCH=touch
 PIP_MODULE=pip
 CURL=curl
 
-# does not always work with link
-LN_S=cp
-
-
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 # a intermediate container: contains EPICS. Development will
@@ -63,6 +59,7 @@ EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 # or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 BACT_IMG=$(BIN_DIR)/bact-container.sif
+
 # Finally: the digital twin containers
 # See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
@@ -78,12 +75,12 @@ CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
 PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 
-CONTAINERS=$(PYTHON_IMG)                         \
-           $(DT_SOFTIOC_IMG)                      \
-           $(UBUNTU_BUILD_IMG)                   \
-           $(EPICS7_IMG)                         \
-           $(BACT_IMG)                           \
-           $(BIN_DIR)/bact-archiver-build.sif    \
+CONTAINERS=$(PYTHON_IMG)                      \
+           $(DT_SOFTIOC_IMG)                  \
+           $(UBUNTU_BUILD_IMG)                \
+           $(EPICS7_IMG)                      \
+           $(BACT_IMG)                        \
+           $(BIN_DIR)/bact-archiver-build.sif \
            $(BIN_DIR)/mongo-container.sif
 
 # former twin based on PyDevice
@@ -146,13 +143,13 @@ clean_prebuilts :
 	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
 	@make -C $(epics_DIR) clean
 	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
-	@make -C $(pydevice_DIR) clean
+	make -C $(pydevice_DIR) clean
 
 distclean_prebuilts :
 	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
-	make  -C $(epics_DIR) distclean
+	@make  -C $(epics_DIR) distclean
 	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
-	@make -C $(pydevice_DIR) distclean
+	@make  -C $(pyepics_DIR) distclean
 
 
 # ------------------------------------------------------------------------------
@@ -181,7 +178,7 @@ twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
 
 
-# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
+# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)        \
 #                                       bact-archiver-build.sdef \
 #                                       $(UBUNTU_BUILD_IMG)      \
 
@@ -192,7 +189,7 @@ twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 	( cd $(T_DIR) \
               && $(PYTHON_IMG) -m $(PIP_MODULE) download -q -r $^ \
-                  -d wheels/ --check-build-dependencies \
+                  -d wheels/ --check-build-dependencies           \
               && $(TOUCH) $@ \
        )
 
