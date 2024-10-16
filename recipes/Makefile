@@ -48,12 +48,6 @@ TOUCH=touch
 PIP_MODULE=pip
 CURL=curl
 
-# does not always work with link
-LN_S=cp
-
-
-MINICONDA_INSTALLER=$(DOWNLOAD_DIR)/miniconda.sh
-
 # soley built to be able to build the other containers
 UBUNTU_BUILD_IMG=$(BIN_DIR)/ubuntu-build.sif
 # a intermediate container: contains EPICS. Development will
@@ -65,11 +59,11 @@ EPICS7_IMG=$(BIN_DIR)/epics7-pydevice.sif
 # or building wheels locally.
 PYTHON_IMG=$(BIN_DIR)/python-container.sif
 BACT_IMG=$(BIN_DIR)/bact-container.sif
+
 # Finally: the digital twin containers
 # See below for a list of all build containers
 DT_IMG=$(BIN_DIR)/pyat-as-twin.sif
-DT_P4P_IMG=$(BIN_DIR)/pyat-as-twin-p4p.sif
-DT_IMG_MINIMAL=$(BIN_DIR)/pyat-as-twin-minimal.sif
+DT_SOFTIOC_IMG=$(BIN_DIR)/pyat-as-twin-softioc.sif
 
 # directories of external
 epics_DIR=$(SRC_DIR)/epics-base/
@@ -81,12 +75,12 @@ CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
 PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
 
-CONTAINERS=$(PYTHON_IMG)                         \
-           $(DT_P4P_IMG)                         \
-           $(UBUNTU_BUILD_IMG)                   \
-           $(EPICS7_IMG)                         \
-           $(BACT_IMG)                           \
-           $(BIN_DIR)/bact-archiver-build.sif    \
+CONTAINERS=$(PYTHON_IMG)                      \
+           $(DT_SOFTIOC_IMG)                  \
+           $(UBUNTU_BUILD_IMG)                \
+           $(EPICS7_IMG)                      \
+           $(BACT_IMG)                        \
+           $(BIN_DIR)/bact-archiver-build.sif \
            $(BIN_DIR)/mongo-container.sif
 
 # former twin based on PyDevice
@@ -98,7 +92,6 @@ CONTAINERS=$(PYTHON_IMG)                         \
 BACT_ARCHIVER_WHEEL_STAMP=$(BUILD_DIR)/bact-archiver-whl.stamp
 PIP_WHEEL_DOWNLOAD_STAMP=$(BUILD_DIR)/pip-download-whl.stamp
 PIP_WHEEL_STAMP=$(BUILD_DIR)/pip-whl.stamp
-MINICONDA_INSTALLER_STAMP=$(BUILD_DIR)/miniconda-installer.stamp
 BACT2_BESSYII_WHEEL_STAMP=$(BUILD_DIR)/bact-bessyii-whl.stamp
 EPICS_BUILD_STAMP=$(BUILD_DIR)/epics-built.stamp
 PYDEVICE_BUILD_STAMP=$(BUILD_DIR)/pydevice-built.stamp
@@ -117,7 +110,7 @@ STAMPS=$(BACT_ARCHIVER_WHEEL_STAMP) \
 
 
 # Some dedicated entry points
-all : echo_t_dir $(CONTAINERS)
+all :  $(CONTAINERS)
 
 twin : $(DT_IMG)
 
@@ -150,13 +143,13 @@ clean_prebuilts :
 	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
 	@make -C $(epics_DIR) clean
 	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
-	@make -C $(pydevice_DIR) clean
+	make -C $(pydevice_DIR) clean
 
 distclean_prebuilts :
 	$(RM) $(RMFLAGS) $(EPICS_BUILD_STAMP)
-	make  -C $(epics_DIR) distclean
+	@make  -C $(epics_DIR) distclean
 	$(RM) $(RMFLAGS) $(PYDEVICE_BUILD_STAMP)
-	@make -C $(pydevice_DIR) distclean
+	@make  -C $(pyepics_DIR) distclean
 
 
 # ------------------------------------------------------------------------------
@@ -173,9 +166,9 @@ $(EPICS7_IMG) : $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP)
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS7_IMG) $(UBUNTU_BUILD_IMG)
 $(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG) $(EPICS7_IMG) $(EPICS_BUILD_STAMP)
 
-$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG) $(EPICS_BUILD_STAMP)
+$(DT_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(EPICS_BUILD_STAMP)
 
-$(DT_P4P_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_MINICONDA_IMG)
+$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP) $(UBUNTU_BUILD_IMG)
 
@@ -185,23 +178,18 @@ twin_prerequisites : $(PIP_WHEEL_STAMP) $(DT4ACC_BUILD_STAMP)
 
 
 
-# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)         \
+# $(BIN_DIR)/bact-archiver-build.sif : $(PIP_WHEEL_STAMP)        \
 #                                       bact-archiver-build.sdef \
 #                                       $(UBUNTU_BUILD_IMG)      \
 
 
-$(BIN_DIR)/bact-miniconda-container.sif : bact-miniconda-container.sdef \
-                                          $(BIN_DIR)/python-container.sif \
-                                          $(PIP_WHEEL_STAMP)
-
-$(UBUNTU_BUILD_MINICONDA_IMG) : $(MINICONDA_INSTALLER_STAMP)
 # ------------------------------------------------------------------------------
 # download wheels
 
 $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 	( cd $(T_DIR) \
               && $(PYTHON_IMG) -m $(PIP_MODULE) download -q -r $^ \
-                  -d wheels/ --check-build-dependencies \
+                  -d wheels/ --check-build-dependencies           \
               && $(TOUCH) $@ \
        )
 
