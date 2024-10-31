@@ -62,7 +62,7 @@ If ignored Anonym wil be the default prefix, localhost:27017 will be mongo url a
 
 5. Start the twin container on a shell to use it as a client.
 
-``apptainer shell ./bin/pyat-as-twin-softioc.sif``
+``apptainer shell ./pyat-as-twin-softioc.sif``
 
 Enjoy by acceing pvlist
 
