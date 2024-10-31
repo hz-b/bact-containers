@@ -27,8 +27,11 @@ Open a terminal and do:
 collection wise:
 
 ``mongorestore --port 47017 --db bessyii --collection machines data/to_import/machines.bson``
+
 ``mongorestore --port 47017 --db bessyii --collection accelerator.setup data/to_import/accelerator.bson``
+
 ``mongorestore --port 47017 --db bessyii --collection bpm.config data/to_import/bpm_config.bson``
+
 ``mongorestore --port 47017 --db bessyii --collection bpm.offset data/to_import/bpm_offset.bson``
 
 OR
@@ -46,7 +49,9 @@ You can tell the twin which prefix to use for the PVs. For example, you can name
 
 
 ``export MONGODB_URL=mongodb://localhost:47017/bessyii``
+
 ``export MONGODB_DB=bessyii``
+
 ``export DT4ACC_PREFIX=MyTwin``
 
 If ignored Anonym wil be the default prefix, localhost:27017 will be mongo url and port used and bessyii as a database.
@@ -60,7 +65,11 @@ If ignored Anonym wil be the default prefix, localhost:27017 will be mongo url a
 ``apptainer shell ./bin/pyat-as-twin-softioc.sif``
 
 Enjoy by acceing pvlist
+
  ``pvlist``
+
  ``pvlist <list Hash>``
+
  ``pvget pv_name``
+
  ``pvput pv_name value``
