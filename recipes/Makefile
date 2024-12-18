@@ -75,6 +75,9 @@ CONFIG_SITE_LOCAL=$(SRC_DIR)/CONFIG_SITE.local
 
 PYDEV_RELEASE_LOCAL=$(pydevice_DIR)/configure/RELEASE.local
 
+DEBIAN_BULLSEYE_IMG=$(BIN_DIR)/debian_bullseye.sif
+DEBIAN_BULLSEYE_KERNEL_RT=$(BIN_DIR)/debian_bullseye_kernel_rt.sif
+
 
 CONTAINERS=$(PYTHON_IMG)                      \
            $(DT_SOFTIOC_IMG)                  \
@@ -83,6 +86,9 @@ CONTAINERS=$(PYTHON_IMG)                      \
            $(BACT_IMG)                        \
            $(BIN_DIR)/bact-archiver-build.sif \
            $(BIN_DIR)/mongo-container.sif
+
+#	   $(DEBIAN_BULLSEYE_IMG)             \
+#	   $(DEBIAN_BULLSEYE_KERNEL_RT)       \
 
 # former twin based on PyDevice
 # please notice: the branch of dt4cc must then match
@@ -166,7 +172,7 @@ $(BIN_DIR)/%.sif : %.sdef
 # containers depending on other containers or further downloads
 $(EPICS7_IMG) : $(UBUNTU_BUILD_IMG) $(EPICS_BUILD_STAMP) $(PYDEVICE_BUILD_STAMP) epics7-pydevice.sdef
 
-$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(P4P_WHEEL_STAMP) $(EPICS_UTILS)
+$(DT_SOFTIOC_IMG) : $(PIP_WHEEL_STAMP) $(P4P_WHEEL_STAMP) $(EPICS_UTILS) $(PYTHON_IMG)
 
 $(DT_IMG_MINIMAL) : $(PIP_WHEEL_STAMP) $(UBUNTU_BUILD_IMG)
 
@@ -177,6 +183,8 @@ $(BACT_IMG) : $(PYTHON_IMG) $(PIP_WHEEL_STAMP)
 #                                       bact-archiver-build.sdef \
 #                                       $(UBUNTU_BUILD_IMG)      \
 
+
+$(DEBIAN_BULLSEYE_KERNEL_RT) : $(DEBIAN_BULLSEYE_IMG)
 
 # ------------------------------------------------------------------------------
 # download wheels
@@ -191,7 +199,6 @@ $(PIP_WHEEL_DOWNLOAD_STAMP) : $(T_DIR)/recipes/lists/bact_package_list.txt
 # prebuild wheels: so that g++ does not need to be included in last
 # build
 
-$()
 $(P4P_WHEEL_STAMP) : $(UBUNTU_BUILD_IMG)
 	( cd $(T_DIR)/ \
               && $(UBUNTU_BUILD_IMG) -c 'python3 -m $(PIP_MODULE) wheel -w wheels/ external-repositories/p4p/' \
