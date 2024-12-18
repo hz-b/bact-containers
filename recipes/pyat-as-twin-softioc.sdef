@@ -49,7 +49,7 @@ EOF
 
     # install what is missing
     python3 -m pip install fastapi pymongo pydantic typing attrs        \
-                 uvicorn httpx numpy>2.0 scipy lark jsons uuid datetime \
+                 uvicorn httpx 'numpy<2.0' scipy lark jsons uuid datetime \
 		 accelerator-toolbox p4p \
 		 -q --find-links file:///build/wheels --no-index
 
@@ -62,7 +62,7 @@ EOF
 
     # p4p built locally and installed here
     # most probably yes: numpy 2.0 compatability I guess
-    python3 -m pip install -q lat2db/ dt4acc/src/ --find-links file:///build/wheels --no-index
+    python3 -m pip install -q lat2db/ dt4acc/src/  --find-links file:///build/wheels --no-index
 
     #  ---------------------------------------------------------
     # trying to reduce container size
@@ -104,7 +104,7 @@ EOF
     echo '# end custom PS1 '                          >> /etc/bash.bashrc
 
     /usr/sbin/ldconfig
-    
+
 %test
 
    /twin/python/venv/bin/python3 -c "import p4p; print(p4p); import softioc; print(softioc)"
@@ -119,4 +119,4 @@ EOF
     # todo:
     #     derive prefix in automatic manner
     #     activate venv at start
-    /twin/python/venv/bin/python3.12 -m dt4acc.setup_configuration.softioc_server
+    /twin/python/venv/bin/python3 -m dt4acc.setup_configuration.softioc_server

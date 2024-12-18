@@ -1,5 +1,6 @@
 # core numeric packages
-numpy>=2.0
+# numpy>=2.0
+numpy<2.0
 scipy
 pandas
 # cython required by numpy ?

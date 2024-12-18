@@ -87,9 +87,6 @@ CONTAINERS=$(PYTHON_IMG)                      \
            $(BIN_DIR)/bact-archiver-build.sif \
            $(BIN_DIR)/mongo-container.sif
 
-#	   $(DEBIAN_BULLSEYE_IMG)             \
-#	   $(DEBIAN_BULLSEYE_KERNEL_RT)       \
-
 # former twin based on PyDevice
 # please notice: the branch of dt4cc must then match
 # too
