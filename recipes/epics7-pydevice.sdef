@@ -8,23 +8,22 @@
 # Container containing the core components of the digital twin
 
 Bootstrap: docker
-From: ubuntu:22.04
+# From: ubuntu:22.04
+From: ubuntu:oracular
 
 %files
-    ../external-repositories/epics-base/bin/linux-x86_64/ /opt/epics/bin/
-    ../external-repositories/epics-base/lib/linux-x86_64/ /opt/epics/lib/
-    ../external-repositories/PyDevice/lib/linux-x86_64/ /opt/epics/lib/
+    ../external-repositories/epics-base/bin/linux-x86_64/* /twin/epics/bin/
+    ../external-repositories/epics-base/lib/linux-x86_64/* /twin/epics/lib/
+
+    ../external-repositories/PyDevice/bin/linux-x86_64/*   /twin/epics/bin/
+    ../external-repositories/PyDevice/lib/linux-x86_64/*   /twin/epics/lib/
 
 %post
-    # number of build jobs: preset for for a moderate machine
-    # N_JOBS=48
-
     export DEBIAN_FRONTEND=noninteractive
     apt-get -q=2 update
 
     apt-get -q=2 install -y --no-install-recommends \
-       libpython3.10 \
-       python3-minimal \
+       python3-dev \
        python3-pip \
        python3-venv \
        libreadline8 \
@@ -34,6 +33,9 @@ From: ubuntu:22.04
        git
 
 
+    # further builds require an updated pip
+    python3 -m venv --system-site-packages /twin/python/venv/
+    . /twin/python/venv/bin/activate
     # need up to date version
     python3 -m pip install -U pip wheel
 
@@ -45,23 +47,25 @@ From: ubuntu:22.04
     # installed
     opt_conf_path=/etc/ld.so.conf.d/opt.conf
     echo '# parts built during process go here' >  $opt_conf_path
-    echo '/opt/lib'                             >> $opt_conf_path
-    echo '/opt/epics/lib'                       >> $opt_conf_path
+    echo '/twin/lib'                             >> $opt_conf_path
+    echo '/twin/epics/lib'                       >> $opt_conf_path
     echo '#EOF'                                 >> $opt_conf_path
 
-    echo "ld config for opt"
     cat $opt_conf_path
-    echo "Release local"
-    cat $release_local
+    /usr/sbin/ldconfig
 
+    CUSTOM_ENV='/.singularity.d/env/99-zz_custom_env.sh'
+
+    cat >$CUSTOM_ENV <<EOF
+#!/bin/bash
+. /twin/python/venv/bin/activate
+PS1='py cont. \w > '
+export PATH=/twin/python/venv/bin/:/usr/bin/:/bin/:/usr/local/bin/
+# EOF
+EOF
+
+    chmod 555 "$CUSTOM_ENV"
     # end setups ---------------------------------------------------------
-
-    export DEBIAN_FRONTEND=noninteractive
-
-
-    # run ldconfig ... to check that it exists and works
-    # don't need to find out after half an hour build
-    /sbin/ldconfig
 
     echo '### remove apt-get cache ###'
     apt-get clean
